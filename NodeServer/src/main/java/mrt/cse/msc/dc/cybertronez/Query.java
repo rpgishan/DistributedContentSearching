@@ -2,10 +2,10 @@ package mrt.cse.msc.dc.cybertronez;
 
 public class Query
 {
- private String query;
- private Node initiatedNode;
+  private String query;
+  private Node initiatedNode;
 
-  public Query(String query, Node initiatedNode)
+  public Query(final String query, final Node initiatedNode)
   {
     this.query = query;
     this.initiatedNode = initiatedNode;

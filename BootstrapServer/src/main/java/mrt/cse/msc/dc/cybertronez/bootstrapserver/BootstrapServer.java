@@ -16,7 +16,7 @@ public class BootstrapServer
 {
   public static void main(final String[] args)
   {
-    Node bsNode = new BootstrapNode();
+    final Node bsNode = new BootstrapNode();
     final DatagramSocket sock;
     String s;
     final List<Node> nodes = new ArrayList<>();

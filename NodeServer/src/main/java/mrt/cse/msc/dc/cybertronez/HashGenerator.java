@@ -6,13 +6,13 @@ import java.security.NoSuchAlgorithmException;
 
 public class HashGenerator
 {
-  String getHash(String word)
+  String getHash(final String word)
   {
-    String hash = "";
+    final String hash = "";
     try
     {
-      MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      byte[] encodedHash = digest.digest(word.getBytes(StandardCharsets.UTF_8));
+      final MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      final byte[] encodedHash = digest.digest(word.getBytes(StandardCharsets.UTF_8));
 
       return bytesToHex(encodedHash);
     }
@@ -24,13 +24,13 @@ public class HashGenerator
     return hash;
   }
 
-  private String bytesToHex(byte[] hashes)
+  private String bytesToHex(final byte[] hashes)
   {
-    StringBuilder hexString = new StringBuilder();
+    final StringBuilder hexString = new StringBuilder();
 
-    for (byte hash : hashes)
+    for (final byte hash : hashes)
     {
-      String hex = Integer.toHexString(0xff & hash);
+      final String hex = Integer.toHexString(0xff & hash);
 
       if (hex.length() == 1)
       {
