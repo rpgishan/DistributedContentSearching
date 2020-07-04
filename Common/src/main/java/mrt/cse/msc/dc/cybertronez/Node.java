@@ -5,7 +5,7 @@ public class Node {
     private int port;
     private String username;
 
-    public Node(String ip, int port, String username){
+    public Node(final String ip, final int port, final String username){
         this.ip = ip;
         this.port = port;
         this.username = username;
