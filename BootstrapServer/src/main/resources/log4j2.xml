@@ -10,7 +10,7 @@
             <PatternLayout pattern="${layout}" />
         </Console>
 
-        <File name="MyFile" fileName="bootstrap.log" append="false">
+        <File name="MyFile" fileName="bootstrap.log" append="true">
             <PatternLayout pattern="${layout}"/>
         </File>
     </Appenders>

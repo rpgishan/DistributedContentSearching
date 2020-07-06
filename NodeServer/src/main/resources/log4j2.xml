@@ -17,7 +17,7 @@
 
     <Loggers>
 
-        <Logger name="mrt.cse.msc.dc.cybertronez" level="info" additivity="true" >
+        <Logger name="mrt.cse.msc.dc.cybertronez" level="info" additivity="false" >
             <AppenderRef ref="Console" />
         </Logger>
 

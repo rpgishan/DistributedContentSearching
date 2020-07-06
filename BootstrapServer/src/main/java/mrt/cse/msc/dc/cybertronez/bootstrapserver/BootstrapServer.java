@@ -53,7 +53,7 @@ public class BootstrapServer
           final String username = st.nextToken();
           if (nodes.isEmpty())
           {
-            reply += "0";
+            reply += " 0";
             nodes.add(new Node(ip, port, username));
           }
           else
@@ -78,11 +78,11 @@ public class BootstrapServer
             {
               if (nodes.size() == 1)
               {
-                reply += "1 " + nodes.get(0).getIp() + " " + nodes.get(0).getPort();
+                reply += " 1 " + nodes.get(0).getIp() + " " + nodes.get(0).getPort();
               }
               else if (nodes.size() == 2)
               {
-                reply += "2 " + nodes.get(0).getIp() + " " + nodes.get(0).getPort() + " " + nodes.get(1).getIp() + " " +
+                reply += " 2 " + nodes.get(0).getIp() + " " + nodes.get(0).getPort() + " " + nodes.get(1).getIp() + " " +
                     nodes.get(1).getPort();
               }
               else
@@ -97,7 +97,7 @@ public class BootstrapServer
                   random_2 = r.nextInt(High - Low) + Low;
                 }
                 echo(random_1 + " " + random_2);
-                reply += "2 " + nodes.get(random_1).getIp() + " " + nodes.get(random_1).getPort() + " " +
+                reply += " 2 " + nodes.get(random_1).getIp() + " " + nodes.get(random_1).getPort() + " " +
                     nodes.get(random_2).getIp() + " " + nodes.get(random_2).getPort();
               }
               nodes.add(new Node(ip, port, username));

@@ -28,8 +28,8 @@ public class Client
   private Set<String> fileNames = new HashSet<>();
   DatagramSocket socket = null;
 
-
-    public Client(final String ip, final int port, final String username) throws SocketException {
+  public Client(final String ip, final String port, final String username) throws SocketException
+  {
     currentNode = new Node(ip, port, username);
     socket = new DatagramSocket();
 
@@ -38,14 +38,11 @@ public class Client
     openSocket();
   }
 
-
   private void openSocket()
   {
     new Thread(() -> {
-      try
+      try (DatagramSocket socket = new DatagramSocket(currentNode.getPort()))
       {
-        DatagramSocket socket = new DatagramSocket(currentNode.getPort());
-
         byte[] requestBuffer = new byte[65536];
         byte[] responseBuffer;
         boolean running = true;
@@ -60,7 +57,7 @@ public class Client
           if (received.equals("end"))
           {
             response = "Socket ended";
-            System.out.println(response);
+            LOGGER.info("response: " + response);
             running = false;
           }
           else
@@ -75,7 +72,6 @@ public class Client
           socket.send(packet);
 
         }
-        socket.close();
       }
       catch (IOException e)
       {
@@ -87,14 +83,11 @@ public class Client
   private String processSocketMessage(final String message)
   {
     final String processSocketMessage = "processSocketMessage";
-    LOGGER.info(processSocketMessage, "message", message);
+    LOGGER.info(processSocketMessage + " message: " + message);
 
     final StringTokenizer st = new StringTokenizer(message, " ");
     final String length = st.nextToken();
     final String command = st.nextToken();
-
-    LOGGER.info(processSocketMessage, "length", length);
-    LOGGER.info(processSocketMessage, "command", command);
 
     if (command.equals(Messages.JOIN.getValue()))
     {
@@ -102,18 +95,32 @@ public class Client
       final String port = st.nextToken();
       final int noOfFiles = Integer.parseInt(st.nextToken());
       final List<String> fileNames = new ArrayList<>(noOfFiles);
-
+      StringBuilder sb;
       for (int i = 0; i < noOfFiles; i++)
       {
-        fileNames.add(st.nextToken());
+        String fileNameSeg = st.nextToken();
+        sb = new StringBuilder();
+        while (!fileNameSeg.equals(","))
+        {
+          if (sb.length() != 0)
+          {
+            sb.append(" ");
+          }
+          sb.append(fileNameSeg);
+          if (st.hasMoreElements())
+          {
+            fileNameSeg = st.nextToken();
+            continue;
+          }
+          break;
+        }
+        fileNames.add(sb.toString());
       }
 
-      LOGGER.info(processSocketMessage, "ip", ip);
-      LOGGER.info(processSocketMessage, "port", port);
-      LOGGER.info(processSocketMessage, "noOfFiles", noOfFiles);
-      LOGGER.info(processSocketMessage, "fileNames", fileNames);
-
       final boolean response = incomingRequestToPairUp(ip, port, fileNames);
+
+      LOGGER.info("response: " + response);
+
       final Messages code = response ? Messages.CODE0 : Messages.CODE9999;
       return generateMessage(Messages.JOINOK.getValue(), code.getValue()); //TODO handle errors
     }
@@ -123,6 +130,8 @@ public class Client
       final String port = st.nextToken();
       final Node node = new Node(ip, port);
       final boolean response = connectedNodes.remove(connectedNodes.stream().filter(node::equals).findFirst().get());
+
+      LOGGER.info("response: " + response);
 
       final Messages code = response ? Messages.CODE0 : Messages.CODE9999;
       return generateMessage(Messages.LEAVEOK.getValue(), code.getValue()); //TODO handle errors
@@ -138,15 +147,17 @@ public class Client
     else if (command.equals("ADD_NODES")) // only for testing
     {//TODO remove this else if
       final String noOfNodes = st.nextToken();
-      final List<Node> nodes = new ArrayList<>();
       for (int i = 0; i < Integer.parseInt(noOfNodes); i++)
       {
         final String ip = st.nextToken();
         final String port = st.nextToken();
-        nodes.add(new Node(ip, port));
+        Node node = new Node(ip, port);
+        connectedNodes.add(node);
+        LOGGER.info("ADD_NODES Node: " + node);
       }
 
-      connectedNodes.addAll(nodes);
+      LOGGER.info("ADD_NODES connectedNodes length: " + connectedNodes.size());
+
       join();
       return generateMessage("ADD_NODES_OK", Messages.CODE9999.getValue()); //TODO handle search and errors
     }
@@ -169,7 +180,12 @@ public class Client
       fileNames.add(fileName);
     }
     fileNames.forEach(name -> routingTable.put(name, currentNode));
-    LOGGER.info("populateFiles", "fileNames", fileNames);
+    if (LOGGER.isInfoEnabled())
+    {
+      StringBuilder fileSb = new StringBuilder();
+      fileNames.forEach(s -> fileSb.append(s).append(", "));
+      LOGGER.info("populateFiles fileNames: " + fileSb.toString());
+    }
   }
 
   public void search(final Query query)
@@ -187,62 +203,102 @@ public class Client
   private boolean incomingRequestToPairUp(final Node node, final List<String> fileNames)
   {
     final boolean add = connectedNodes.add(node);
-    fileNames.forEach(hash -> routingTable.put(hash, node));
+    fileNames.forEach(fileName -> routingTable.put(fileName, node));
     return add;//TODO handle errors
   }
 
   private void join()
   {
-    joinBS();
-    connectedNodes.forEach(this::outgoingRequestToPairUp);
+    new Thread(() -> {
+      joinBS();
+      outgoingRequestToPairUp(connectedNodes);
+    }).start();
   }
 
   private void joinBS()
   {
     //TODO Sachini
+    //unreg first then reg
     final int port = bsServer.getPort();
-    String joinMessage = "";
+    String joinMessage = generateMessage(Messages.REG.getValue(), currentNode.getIp(),
+        Integer.toString(currentNode.getPort()), currentNode.getUsername());
     //send join request to bs
-    String response = Util.sendMessage(joinMessage,bsServer.getIp(), socket, port);
 
-    final ArrayList<Node> nodesToBeConnected = new ArrayList<>();//receive list of nodes to connect
-    connectedNodes.addAll(nodesToBeConnected);
+//    final ArrayList<Node> nodesToBeConnected = new ArrayList<>();//receive list of nodes to connect
+    String response = Util.sendMessage(joinMessage, bsServer.getIp(), socket, port);
+
+    LOGGER.info("JoinBS response: " + response);
+
+    StringTokenizer st = new StringTokenizer(response, " ");
+    String length = st.nextToken();
+    String command = st.nextToken();
+    int noOfNodes = Integer.parseInt(st.nextToken());
+    for (int i = 0; i < noOfNodes; i++)
+    {
+      String ip = st.nextToken();
+      String porttt = st.nextToken();
+      connectedNodes.add(new Node(ip, porttt));
+    }
+
+    if (LOGGER.isInfoEnabled())
+    {
+      StringBuilder stringBuilder = new StringBuilder();
+      connectedNodes.forEach(s -> stringBuilder.append(s).append(" "));
+      LOGGER.info("joinBS connectedNodes: " + stringBuilder.toString());
+    }
+
     LOGGER.info("JoinBS");
+  }
+
+  private void outgoingRequestToPairUp(final List<Node> nodes)
+  {
+    nodes.forEach(this::outgoingRequestToPairUp);
   }
 
   private void outgoingRequestToPairUp(final Node node)
   {
-    //send pair up request to other nodes
+//    send pair up request to other nodes
 //    need to send hash of file names
-    try
+
+    final StringBuilder files = new StringBuilder();
+    fileNames.forEach(file -> {
+      if (files.length() != 0)
+      {
+        files.append(" , ");//TODO need to change this delim
+      }
+      files.append(file);
+    });
+
+    final byte[] buf = generateMessage(Messages.JOIN.getValue(), currentNode.getIp(),
+        Integer.toString(currentNode.getPort()), Integer.toString(fileNames.size()), files.toString()).getBytes();
+
+    final int port = node.getPort();
+
+    String response = sendSocketMessage(node.getIp(), port, buf);
+
+    LOGGER.info("outgoingRequestToPairUp response: " + response);
+
+  }
+
+  private String sendSocketMessage(String ip, int port, byte[] buffer)
+  {
+    try (final DatagramSocket socket = new DatagramSocket())
     {
-      final DatagramSocket socket = new DatagramSocket();
-
-      final InetAddress address = InetAddress.getByName(node.getIp());
-
-      final StringBuilder files = new StringBuilder();
-      fileNames.forEach(file -> {
-        if (files.length() != 0)
-        {
-          files.append(" ");
-        }
-        files.append(file);
-      });
-
-      final byte[] buf = generateMessage(Messages.JOIN.getValue(), currentNode.getIp(),
-          Integer.toString(currentNode.getPort()), Integer.toString(fileNames.size()), files.toString()).getBytes();
-      DatagramPacket packet = new DatagramPacket(buf, buf.length, address, node.getPort());
+      socket.setSoTimeout(60000);
+      final InetAddress address = InetAddress.getByName(ip);
+      DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
       socket.send(packet);
-      packet = new DatagramPacket(buf, buf.length);
-      socket.receive(packet);
+      packet = new DatagramPacket(buffer, buffer.length);
+      socket.receive(packet);//TODO handle timeout
       final String received = new String(packet.getData(), 0, packet.getLength());
-      LOGGER.info("outgoingRequestToPairUp", received);
+      LOGGER.info("sendSocketMessage received: " + received);
+      return received;
     }
     catch (IOException e)
     {
       LOGGER.error("Exception", e);
+      return "";
     }
-
   }
 
   private String generateMessage(final String... args)
@@ -257,8 +313,13 @@ public class Client
       }
       sb.append(word);
     }
-    final String lenght = String.format("%04d", sb.length());
-    sb.replace(0, 4, lenght);
+    final String length = String.format("%04d", sb.length());
+    sb.replace(0, 4, length);
+
+    if (LOGGER.isInfoEnabled())
+    {
+      LOGGER.info("generateMessage: " + sb.toString());
+    }
 
     return sb.toString();
   }
@@ -268,13 +329,16 @@ public class Client
     if (args.length == 3)
     {
       final String ip = args[0];
-      final int port = Integer.parseInt(args[1]);
+      final String port = args[1];
       final String username = args[2];
-        try {
-            final Client client = new Client(ip, port, username);
-        } catch (SocketException e) {
-            LOGGER.error("Error while creating socket instance. ", e);
-        }
+      try
+      {
+        final Client client = new Client(ip, port, username);
+      }
+      catch (SocketException e)
+      {
+        LOGGER.error("Error while creating socket instance.", e);
+      }
     }
   }
 }
