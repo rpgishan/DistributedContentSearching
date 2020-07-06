@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,14 +26,18 @@ public class Client
   private List<Query> alreadySearchedQueries = new ArrayList<>();
   private Map<String, Node> routingTable = new HashMap<>();
   private Set<String> fileNames = new HashSet<>();
+  DatagramSocket socket = null;
 
-  public Client(final String ip, final int port, final String username)
-  {
+
+    public Client(final String ip, final int port, final String username) throws SocketException {
     currentNode = new Node(ip, port, username);
+    socket = new DatagramSocket();
+
     populateFiles();
     join();
     openSocket();
   }
+
 
   private void openSocket()
   {
@@ -196,7 +201,10 @@ public class Client
   {
     //TODO Sachini
     final int port = bsServer.getPort();
+    String joinMessage = "";
     //send join request to bs
+    String response = Util.sendMessage(joinMessage,bsServer.getIp(), socket, port);
+
     final ArrayList<Node> nodesToBeConnected = new ArrayList<>();//receive list of nodes to connect
     connectedNodes.addAll(nodesToBeConnected);
     LOGGER.info("JoinBS");
@@ -262,7 +270,11 @@ public class Client
       final String ip = args[0];
       final int port = Integer.parseInt(args[1]);
       final String username = args[2];
-      final Client client = new Client(ip, port, username);
+        try {
+            final Client client = new Client(ip, port, username);
+        } catch (SocketException e) {
+            LOGGER.error("Error while creating socket instance. ", e);
+        }
     }
   }
 }
