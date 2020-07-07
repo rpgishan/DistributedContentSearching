@@ -220,13 +220,15 @@ public class Client
     //TODO Sachini
     //unreg first then reg
     final int port = bsServer.getPort();
-    String joinMessage = generateMessage(Messages.REG.getValue(), currentNode.getIp(),
+    String regMessage = generateMessage(Messages.REG.getValue(), currentNode.getIp(),
         Integer.toString(currentNode.getPort()), currentNode.getUsername());
     //send join request to bs
 
 //    final ArrayList<Node> nodesToBeConnected = new ArrayList<>();//receive list of nodes to connect
-    String response = Util.sendMessage(joinMessage, bsServer.getIp(), socket, port);
+    String response = Util.sendMessage(regMessage.getBytes(), bsServer.getIp(), socket, port);
 
+
+    Util.processRegisterResponse(response, connectedNodes);
     LOGGER.info("JoinBS response: " + response);
 
     StringTokenizer st = new StringTokenizer(response, " ");
@@ -272,9 +274,7 @@ public class Client
     final byte[] buf = generateMessage(Messages.JOIN.getValue(), currentNode.getIp(),
         Integer.toString(currentNode.getPort()), Integer.toString(fileNames.size()), files.toString()).getBytes();
 
-    final int port = node.getPort();
-
-    String response = sendSocketMessage(node.getIp(), port, buf);
+    String response = Util.sendMessage(buf,node.getIp(),socket, node.getPort());
 
     LOGGER.info("outgoingRequestToPairUp response: " + response);
 
