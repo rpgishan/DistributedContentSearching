@@ -6,11 +6,11 @@
 
     <Appenders>
 
-        <Console name="Console">
+        <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="${layout}" />
         </Console>
 
-        <File name="MyFile" fileName="bootstrap.log" append="true">
+        <File name="LogFile" fileName="logs/bootstrap.log" append="true">
             <PatternLayout pattern="${layout}"/>
         </File>
     </Appenders>
@@ -19,10 +19,12 @@
 
         <Logger name="mrt.cse.msc.dc.cybertronez" level="info" additivity="false" >
             <AppenderRef ref="Console" />
+            <AppenderRef ref="LogFile" />
         </Logger>
 
         <Root level="info">
             <AppenderRef ref="Console" />
+            <AppenderRef ref="LogFile" />
         </Root>
 
     </Loggers>

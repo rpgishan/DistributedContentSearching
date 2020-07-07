@@ -14,6 +14,7 @@ public class TestClient
     final InetAddress address;
 
     byte[] buf;
+    byte[] resbuf = new byte[65000];
     final Random r = new Random();
 
     socket = new DatagramSocket();
@@ -22,32 +23,31 @@ public class TestClient
     final int max = 126;
 //    for (int i = 0; i < 10; i++)
 //    {
-      final int size = r.nextInt(10);
-      final StringBuilder msg = new StringBuilder("Start -- " + size + " : --> ");
-      for (int j = 0; j < size; j++)
-      {
-        msg.append((j != 0 && j % 1024 == 0) ? '\n' : (char) (min + r.nextInt(max - min)));
-      }
-      msg.append("\n\n");
-      buf = msg.toString().getBytes();
-      buf = "0027 JOIN 64.12.123.190 432 3 file1.txt file2.txt file3.txt".getBytes();
-      DatagramPacket packet = new DatagramPacket(buf, buf.length, address, 8082);
-      socket.send(packet);
-      packet = new DatagramPacket(buf, buf.length);
-      socket.receive(packet);
-      String received = new String(
-          packet.getData(), 0, packet.getLength());
-      System.out.println(received);
+//      final int size = r.nextInt(10);
+//      final StringBuilder msg = new StringBuilder("Start -- " + size + " : --> ");
+//      for (int j = 0; j < size; j++)
+//      {
+//        msg.append((j != 0 && j % 1024 == 0) ? '\n' : (char) (min + r.nextInt(max - min)));
+//      }
+//      msg.append("\n\n");
+//      buf = msg.toString().getBytes();
+//      buf = "0027 JOIN 64.12.123.190 432 3 file1.txt file2.txt file3.txt".getBytes();
+//      DatagramPacket packet = new DatagramPacket(buf, buf.length, address, 8082);
+//      socket.send(packet);
+//      packet = new DatagramPacket(buf, buf.length);
+//      socket.receive(packet);
+//      String received = new String(
+//          packet.getData(), 0, packet.getLength());
+//      System.out.println(received);
 
 //    }
 
-    buf = "end".getBytes();
-    /*DatagramPacket*/ packet = new DatagramPacket(buf, buf.length, address, 8082);
+    buf = Util.generateMessage("DETAILS").getBytes();
+    DatagramPacket packet = new DatagramPacket(buf, buf.length, address, 8082);
     socket.send(packet);
-    packet = new DatagramPacket(buf, buf.length);
+    packet = new DatagramPacket(resbuf, resbuf.length);
     socket.receive(packet);
-    /*String*/ received = new String(
-        packet.getData(), 0, packet.getLength());
+    String received = new String(packet.getData(), 0, packet.getLength());
     System.out.println(received);
     socket.close();
 

@@ -8,24 +8,28 @@ import java.util.List;
 import java.util.Random;
 import java.util.StringTokenizer;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import mrt.cse.msc.dc.cybertronez.BootstrapNode;
 import mrt.cse.msc.dc.cybertronez.Messages;
 import mrt.cse.msc.dc.cybertronez.Node;
+import mrt.cse.msc.dc.cybertronez.Util;
 
 public class BootstrapServer
 {
+  private static Logger logger;
+
   public static void main(final String[] args)
   {
     final Node bsNode = new BootstrapNode();
-    final DatagramSocket sock;
+    logger = LogManager.getLogger(BootstrapServer.class.getName() + " - " + bsNode.toString());
     String s;
     final List<Node> nodes = new ArrayList<>();
 
-    try
+    try (DatagramSocket sock = new DatagramSocket(bsNode.getPort()))
     {
-      sock = new DatagramSocket(bsNode.getPort());
-
-      echo("Bootstrap Server created at " + bsNode.getPort() + ". Waiting for incoming data...");
+      logger.info("Bootstrap Server created at {}. Waiting for incoming data...", bsNode::getPort);
 
       while (true)
       {
@@ -37,23 +41,27 @@ public class BootstrapServer
         s = new String(data, 0, incoming.getLength());
 
         //echo the details of incoming data - client ip : client port - client message
-        echo(incoming.getAddress().getHostAddress() + " : " + incoming.getPort() + " - " + s);
+        String finalS = s;
+        logger.info("{} : {} - {}", incoming.getAddress()::getHostAddress, incoming::getPort, () -> finalS);
 
         final StringTokenizer st = new StringTokenizer(s, " ");
 
         final String length = st.nextToken();
         final String command = st.nextToken();
 
-        if (command.equals(Messages.REG.toString()))
+        logger.info("Length: {}", () -> length);
+        logger.info("Command: {}", () -> command);
+
+        if (command.equals(Messages.REG.getValue()))
         {
-          String reply = Messages.REGOK.toString();
+          StringBuilder replyBuilder = new StringBuilder(Messages.REGOK.getValue());
 
           final String ip = st.nextToken();
           final int port = Integer.parseInt(st.nextToken());
           final String username = st.nextToken();
           if (nodes.isEmpty())
           {
-            reply += " 0";
+            replyBuilder.append(" ").append(Messages.CODE0);
             nodes.add(new Node(ip, port, username));
           }
           else
@@ -65,11 +73,11 @@ public class BootstrapServer
               {
                 if (node.getUsername().equals(username))
                 {
-                  reply += "9998";
+                  replyBuilder.append(Messages.CODE9998);
                 }
                 else
                 {
-                  reply += "9997";
+                  replyBuilder.append(Messages.CODE9997);
                 }
                 isOkay = false;
               }
@@ -78,12 +86,12 @@ public class BootstrapServer
             {
               if (nodes.size() == 1)
               {
-                reply += " 1 " + nodes.get(0).getIp() + " " + nodes.get(0).getPort();
+                replyBuilder.append(" 1 ").append(nodes.get(0).getIp()).append(" ").append(nodes.get(0).getPort());
               }
               else if (nodes.size() == 2)
               {
-                reply += " 2 " + nodes.get(0).getIp() + " " + nodes.get(0).getPort() + " " + nodes.get(1).getIp() + " " +
-                    nodes.get(1).getPort();
+                replyBuilder.append(" 2 ").append(nodes.get(0).getIp()).append(" ").append(nodes.get(0).getPort())
+                    .append(" ").append(nodes.get(1).getIp()).append(" ").append(nodes.get(1).getPort());
               }
               else
               {
@@ -96,21 +104,27 @@ public class BootstrapServer
                 {
                   random_2 = r.nextInt(High - Low) + Low;
                 }
-                echo(random_1 + " " + random_2);
-                reply += " 2 " + nodes.get(random_1).getIp() + " " + nodes.get(random_1).getPort() + " " +
-                    nodes.get(random_2).getIp() + " " + nodes.get(random_2).getPort();
+
+                int finalRandom_ = random_2;
+                logger.info("{} {}", () -> random_1, () -> finalRandom_);
+
+                replyBuilder.append(" 2 ").append(nodes.get(random_1).getIp()).append(" ")
+                    .append(nodes.get(random_1).getPort()).append(" ").append(nodes.get(random_2).getIp()).append(" ")
+                    .append(nodes.get(random_2).getPort());
               }
               nodes.add(new Node(ip, port, username));
             }
           }
 
-          reply = String.format("%04d", reply.length() + 5) + " " + reply;
+          final String reply = Util.generateMessage(replyBuilder.toString());
+
+          logger.info("Reply: {}", () -> reply);
 
           final DatagramPacket dpReply = new DatagramPacket(reply.getBytes(), reply.getBytes().length,
               incoming.getAddress(), incoming.getPort());
           sock.send(dpReply);
         }
-        else if (command.equals(Messages.UNREG))
+        else if (command.equals(Messages.UNREG.getValue()))
         {
           final String ip = st.nextToken();
           final int port = Integer.parseInt(st.nextToken());
@@ -121,19 +135,24 @@ public class BootstrapServer
             {
               nodes.remove(i);
               final String reply = "0012 UNROK 0";
+
+              String finalReply = reply;
+              logger.info("Reply: {}", () -> finalReply);
+
               final DatagramPacket dpReply = new DatagramPacket(reply.getBytes(), reply.getBytes().length,
                   incoming.getAddress(), incoming.getPort());
               sock.send(dpReply);
             }
           }
         }
-        else if (command.equals(Messages.ECHO))
+        else if (command.equals(Messages.ECHO.getValue()))
         {
           for (final Node node : nodes)
           {
-            echo(node.getIp() + " " + node.getPort() + " " + node.getUsername());
+            logger.info("{} {} {}", node::getIp, node::getPort, node::getUsername);
           }
           final String reply = "0012 ECHOK 0";
+          logger.info("Reply: {}", () -> reply);
           final DatagramPacket dpReply = new DatagramPacket(reply.getBytes(), reply.getBytes().length,
               incoming.getAddress(), incoming.getPort());
           sock.send(dpReply);
@@ -144,13 +163,8 @@ public class BootstrapServer
 
     catch (IOException e)
     {
-      System.err.println("IOException " + e);
+      logger.error("IOException", e);
     }
   }
 
-  //simple function to echo data to terminal
-  public static void echo(final String msg)
-  {
-    System.out.println(msg);
-  }
 }
