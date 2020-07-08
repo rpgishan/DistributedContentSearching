@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -141,10 +142,31 @@ public class Client
     {//TODO
       final String ip = st.nextToken();
       final String port = st.nextToken();
-      final String fileName = st.nextToken();
-      final String hops = st.nextToken();
-      return Util
-          .generateMessage(Messages.SEROK.getValue(), Messages.CODE9999.getValue()); //TODO handle search and errors
+      int hops = Integer.parseInt(st.nextToken());
+      hops++;
+
+      int noOfSearchedNodes = Integer.parseInt(st.nextToken());
+      Set<Node> propagatedNodes = new HashSet<>();
+      for (int i = 0; i < noOfSearchedNodes; i++)
+      {
+        String nodeIp = st.nextToken();
+        String nodePort = st.nextToken();
+        Node node = new Node(nodeIp, nodePort);
+        propagatedNodes.add(node);
+      }
+
+      StringBuilder fileNameBuilder = new StringBuilder();
+      while (st.hasMoreElements())
+      {
+        if (fileNameBuilder.length() != 0)
+        {
+          fileNameBuilder.append(" ");
+        }
+        fileNameBuilder.append(st.nextToken());
+      }
+
+      return search(new Query(fileNameBuilder.toString(), new Node(ip, port)), hops, propagatedNodes);
+//      return Util.generateMessage(Messages.SEROK.getValue(), Messages.CODE9999.getValue()); //TODO handle search and errors
     }
     else if (command.equals(Messages.DETAILS.getValue()))
     {
@@ -192,10 +214,151 @@ public class Client
     }
   }
 
-  public void search(final Query query)
+  private String search(final Query query, int hops, Set<Node> propagatedNodes)
   {
+    logger.info("Begin search of \"{}\" in {}. Current hops: {}", () -> query, currentNode::toString, () -> hops);
+    if (alreadySearchedQueries.contains(query))
+    {
+      logger.info("Already searched of \"{}\" in {}. Current hops: {}", () -> query, currentNode::toString, () -> hops);
+      StringBuilder propagatedNodesBuilder = new StringBuilder(Integer.toString(propagatedNodes.size()));
+      propagatedNodes.forEach(node -> {
+        propagatedNodesBuilder.append(" ").append(node.getIp()).append(" ").append(node.getPort());
+      });
+      return Util.generateMessage(Messages.SEROK.getValue(), Messages.CODE9999.getValue(),
+          Messages.ALREADY_SEARCHED.getValue(), Integer.toString(hops), propagatedNodesBuilder.toString());
+    }
     alreadySearchedQueries.add(query);
     //TODO perform search
+
+    String[] queryWords = query.getQuery().split(" ");
+    List<String> foundFiles = new ArrayList<>();
+    fileNames.forEach(fileName -> {
+      String[] fileNameWords = fileName.split(" ");
+      if (fileNameWords.length >= queryWords.length)
+      {
+        boolean valid = true;
+        int j = 0;
+        for (int i = 0; i < queryWords.length && valid; i++)
+        {
+          valid = false;
+          while (j < fileNameWords.length)
+          {
+            if (queryWords[i].equalsIgnoreCase(fileNameWords[j]))
+            {
+              valid = true;
+              break;
+            }
+            j++;
+          }
+        }
+        if (valid)
+        {
+          foundFiles.add(fileName);
+          logger.info("Found file \"{}\" for the query of \"{}\" in {}.", () -> fileName, () -> query,
+              currentNode::toString);
+        }
+      }
+    });
+
+    if (foundFiles.isEmpty())
+    {
+      logger.info("No matching files found in {}.", currentNode::toString);
+      propagatedNodes.add(currentNode);
+      return propagateSearch(query, hops, propagatedNodes);
+    }
+
+    List<String> foundFileNames = foundFiles.stream().map(fileName -> fileName.replace(' ', '_'))
+        .collect(Collectors.toList());
+    StringBuilder sb = new StringBuilder();
+    foundFileNames.forEach(name -> {
+      if (sb.length() != 0)
+      {
+        sb.append(" ");
+      }
+      sb.append(name);
+    });
+
+    return Util
+        .generateMessage(Messages.SEROK.getValue(), Messages.CODE0.getValue(), Integer.toString(hops),
+            Integer.toString(foundFileNames.size()), sb.toString());
+    //TODO handle errors
+  }
+
+  private String propagateSearch(Query query, int hops, Set<Node> propagatedNodes)
+  {
+    //TODO propagate search to child nodes
+    try (DatagramSocket socket = new DatagramSocket())
+    {
+      for (Node node : connectedNodes)
+      {
+        int finalHops = hops;
+        logger.info("Propagate search of \"{}\" to {}. Current hops: {}", () -> query, node::toString, () -> finalHops);
+
+        if (propagatedNodes.contains(node))
+        {
+          continue;
+        }
+
+        String propagatedNodesString = getPropagatedNodesString(propagatedNodes);
+
+        byte[] buffer = Util.generateMessage(Messages.SER.getValue(), query.getInitiatedNode().getIp(),
+            Integer.toString(query.getInitiatedNode().getPort()), Integer.toString(hops),
+            propagatedNodesString, query.getQuery()).getBytes();
+        String response = Util.sendMessage(buffer, node.getIp(), socket, node.getPort());
+        StringTokenizer st = new StringTokenizer(response, " ");
+        String length = st.nextToken();
+        String command = st.nextToken();
+        if (command.equals(Messages.SEROK.getValue()))
+        {
+          String code = st.nextToken();
+          if (code.equals(Messages.CODE0.getValue()))
+          {
+            return response;
+          }
+          else if (code.equals(Messages.CODE9999.getValue()))
+          {
+            String error = st.nextToken();
+            int newHops = Integer.parseInt(st.nextToken());
+            hops = newHops;
+
+            int noOfNewPropagatedNodes = Integer.parseInt(st.nextToken());
+
+            for (int i = 0; i < noOfNewPropagatedNodes; i++)
+            {
+              String ip = st.nextToken();
+              String port = st.nextToken();
+              propagatedNodes.add(new Node(ip,port));
+            }
+
+            logger.info("Got search response error of \"{}\" - \"{}\" for \"{}\" from {}. Current hops: {}", () -> code,
+                () -> error, () -> query, node::toString, () -> newHops);
+            continue;
+          }
+        }
+      }
+    }
+    catch (SocketException e)
+    {
+      logger.error("SocketException", e);
+    }
+    int finalHops1 = hops;
+    logger.info("File not found for \"{}\" in {}. Current hops: {}", () -> query, currentNode::toString, () -> finalHops1);
+
+    String propagatedNodesString = getPropagatedNodesString(propagatedNodes);
+
+    return Util.generateMessage(Messages.SEROK.getValue(), Messages.CODE9999.getValue(), Messages.NOT_FOUND.getValue(),
+        Integer.toString(hops),propagatedNodesString);
+  }
+
+  private String getPropagatedNodesString(Set<Node> propagatedNodes)
+  {
+    StringBuilder propagatedNodesBuilder = new StringBuilder(Integer.toString(propagatedNodes.size()));
+    for (Node propagatedNode : propagatedNodes)
+    {
+      propagatedNodesBuilder.append(" ").append(propagatedNode.getIp()).append(" ")
+          .append(propagatedNode.getPort());
+    }
+    return propagatedNodesBuilder.toString();
   }
 
   private void addDataToRoutingTable(String fileName, Node node)
