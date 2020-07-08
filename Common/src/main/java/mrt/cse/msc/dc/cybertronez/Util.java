@@ -51,8 +51,25 @@ public class Util {
 
     }
 
-    public static void processRegisterResponse(String response, List<Node> connectedNodes) {
+    public static String generateMessage(final String... args) {
 
+        final StringBuilder sb = new StringBuilder("####");
+
+        for (final String word : args) {
+            if (sb.length() != 0) {
+                sb.append(" ");
+            }
+            sb.append(word);
+        }
+        final String length = String.format("%04d", sb.length());
+        sb.replace(0, 4, length);
+
+        LOGGER.info("generateMessage: {}", sb::toString);
+
+        return sb.toString();
+    }
+
+    public static String processRegisterResponse(String response, List<Node> connectedNodes) {
 
         StringTokenizer st = new StringTokenizer(response, " ");
         String length = st.nextToken();
@@ -61,17 +78,21 @@ public class Util {
 
         for (int i = 0; i < noOfNodes; i++) {
             String ip = st.nextToken();
-            String porttt = st.nextToken();
-            connectedNodes.add(new Node(ip, porttt));
+            String port = st.nextToken();
+            connectedNodes.add(new Node(ip, port));
         }
+
+
+
         if (LOGGER.isInfoEnabled()) {
             StringBuilder stringBuilder = new StringBuilder();
             connectedNodes.forEach(s -> stringBuilder.append(s).append(" "));
-            LOGGER.info("joinBS connectedNodes: " + stringBuilder.toString());
+            LOGGER.info("joinBS connectedNodes: {}", stringBuilder::toString);
+            LOGGER.info("JoinBS Successful");
         }
 
-        LOGGER.info("JoinBS");
-    }
+        return response;
 
+    }
 
 }

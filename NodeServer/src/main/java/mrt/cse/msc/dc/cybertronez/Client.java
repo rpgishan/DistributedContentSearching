@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -19,18 +20,19 @@ import org.apache.logging.log4j.Logger;
 
 public class Client
 {
-  private static final Logger LOGGER = LogManager.getLogger(Client.class);
+  private static Logger logger = null;
   private Node bsServer = new BootstrapNode();
   private Node currentNode;
   private List<Node> connectedNodes = new ArrayList<>();
   private List<Query> alreadySearchedQueries = new ArrayList<>();
-  private Map<String, Node> routingTable = new HashMap<>();
+  private Map<String, Set<Node>> routingTable = new HashMap<>();
   private Set<String> fileNames = new HashSet<>();
   DatagramSocket socket = null;
 
   public Client(final String ip, final String port, final String username) throws SocketException
   {
     currentNode = new Node(ip, port, username);
+    logger = LogManager.getLogger(Client.class.getName() + " - " + currentNode.toString());
     socket = new DatagramSocket();
 
     populateFiles();
@@ -57,7 +59,7 @@ public class Client
           if (received.equals("end"))
           {
             response = "Socket ended";
-            LOGGER.info("response: " + response);
+            logger.info("response: {}", () -> response);
             running = false;
           }
           else
@@ -75,7 +77,7 @@ public class Client
       }
       catch (IOException e)
       {
-        LOGGER.error("Exception", e);
+        logger.error("Exception", e);
       }
     }).start();
   }
@@ -83,7 +85,7 @@ public class Client
   private String processSocketMessage(final String message)
   {
     final String processSocketMessage = "processSocketMessage";
-    LOGGER.info(processSocketMessage + " message: " + message);
+    logger.info(processSocketMessage + " message: {}", () -> message);
 
     final StringTokenizer st = new StringTokenizer(message, " ");
     final String length = st.nextToken();
@@ -119,22 +121,23 @@ public class Client
 
       final boolean response = incomingRequestToPairUp(ip, port, fileNames);
 
-      LOGGER.info("response: " + response);
+      logger.info("response: {}", () -> response);
 
       final Messages code = response ? Messages.CODE0 : Messages.CODE9999;
-      return generateMessage(Messages.JOINOK.getValue(), code.getValue()); //TODO handle errors
+      return Util.generateMessage(Messages.JOINOK.getValue(), code.getValue()); //TODO handle errors
     }
     else if (command.equals(Messages.LEAVE.getValue()))
     {
       final String ip = st.nextToken();
       final String port = st.nextToken();
       final Node node = new Node(ip, port);
-      final boolean response = connectedNodes.remove(connectedNodes.stream().filter(node::equals).findFirst().get());
+      Optional<Node> first = connectedNodes.stream().filter(node::equals).findFirst();
+      final boolean response = first.isPresent() ? connectedNodes.remove(first.get()) : false;
 
-      LOGGER.info("response: " + response);
+      logger.info("response: {}", () -> response);
 
       final Messages code = response ? Messages.CODE0 : Messages.CODE9999;
-      return generateMessage(Messages.LEAVEOK.getValue(), code.getValue()); //TODO handle errors
+      return Util.generateMessage(Messages.LEAVEOK.getValue(), code.getValue()); //TODO handle errors
     }
     else if (command.equals(Messages.SER.getValue()))
     {//TODO
@@ -142,28 +145,27 @@ public class Client
       final String port = st.nextToken();
       final String fileName = st.nextToken();
       final String hops = st.nextToken();
-      return generateMessage(Messages.SEROK.getValue(), Messages.CODE9999.getValue()); //TODO handle search and errors
+      return Util
+          .generateMessage(Messages.SEROK.getValue(), Messages.CODE9999.getValue()); //TODO handle search and errors
     }
-    else if (command.equals("ADD_NODES")) // only for testing
-    {//TODO remove this else if
-      final String noOfNodes = st.nextToken();
-      for (int i = 0; i < Integer.parseInt(noOfNodes); i++)
-      {
-        final String ip = st.nextToken();
-        final String port = st.nextToken();
-        Node node = new Node(ip, port);
-        connectedNodes.add(node);
-        LOGGER.info("ADD_NODES Node: " + node);
-      }
-
-      LOGGER.info("ADD_NODES connectedNodes length: " + connectedNodes.size());
-
-      join();
-      return generateMessage("ADD_NODES_OK", Messages.CODE9999.getValue()); //TODO handle search and errors
+    else if (command.equals("DETAILS"))
+    {
+      StringBuilder sb = new StringBuilder();
+      sb.append("Node - ").append(currentNode.toString());
+      sb.append("\n*****ROUTING_TABLE*****");
+      routingTable.forEach((s, nodes) -> {
+        sb.append("\n").append(s).append(" - ");
+        nodes.forEach(node -> sb.append(node).append(" , "));
+      });
+      sb.append("\n*****FILE_NAMES*****");
+      fileNames.forEach(s -> {
+        sb.append(s).append(" , ");
+      });
+      return Util.generateMessage("DETAILS", sb.toString());
     }
     else
     {
-      return generateMessage(Messages.ERROR.toString());
+      return Util.generateMessage(Messages.ERROR.toString());
     }
 
   }
@@ -179,12 +181,12 @@ public class Client
       final String fileName = FileNamesAndQueries.FILE_NAMES.get(r.nextInt(FileNamesAndQueries.FILE_NAMES.size()));
       fileNames.add(fileName);
     }
-    fileNames.forEach(name -> routingTable.put(name, currentNode));
-    if (LOGGER.isInfoEnabled())
+    fileNames.forEach(name -> addDataToRoutingTable(name, currentNode));
+    if (logger.isInfoEnabled())
     {
       StringBuilder fileSb = new StringBuilder();
       fileNames.forEach(s -> fileSb.append(s).append(", "));
-      LOGGER.info("populateFiles fileNames: " + fileSb.toString());
+      logger.info("populateFiles fileNames: {}", fileSb::toString);
     }
   }
 
@@ -192,6 +194,15 @@ public class Client
   {
     alreadySearchedQueries.add(query);
     //TODO perform search
+  }
+
+  private void addDataToRoutingTable(String fileName, Node node)
+  {
+    if (!routingTable.containsKey(fileName))
+    {
+      routingTable.put(fileName, new HashSet<>());
+    }
+    routingTable.get(fileName).add(node);
   }
 
   private boolean incomingRequestToPairUp(final String ip, final String port, final List<String> fileNames)
@@ -203,7 +214,7 @@ public class Client
   private boolean incomingRequestToPairUp(final Node node, final List<String> fileNames)
   {
     final boolean add = connectedNodes.add(node);
-    fileNames.forEach(fileName -> routingTable.put(fileName, node));
+    fileNames.forEach(fileName -> addDataToRoutingTable(fileName, node));
     return add;//TODO handle errors
   }
 
@@ -215,41 +226,37 @@ public class Client
     }).start();
   }
 
-  private void joinBS()
-  {
-    //TODO Sachini
-    //unreg first then reg
-    final int port = bsServer.getPort();
-    String regMessage = generateMessage(Messages.REG.getValue(), currentNode.getIp(),
-        Integer.toString(currentNode.getPort()), currentNode.getUsername());
-    //send join request to bs
+  private void joinBS() {
+      //TODO Sachini
+      final int port = bsServer.getPort();
+      //unreg first then reg
+      String unregisterMessage = Util.generateMessage(Messages.UNREG.getValue(), currentNode.getIp(),
+              Integer.toString(currentNode.getPort()), currentNode.getUsername());
+      String unRegResponse = Util.sendMessage(unregisterMessage.getBytes(), currentNode.getIp(), socket, port);
 
-//    final ArrayList<Node> nodesToBeConnected = new ArrayList<>();//receive list of nodes to connect
-    String response = Util.sendMessage(regMessage.getBytes(), bsServer.getIp(), socket, port);
+      if (unRegResponse.equals("9999")) {
+          logger.info("Error in unreg message");
+      }
 
+      String joinMessage = Util.generateMessage(Messages.REG.getValue(), currentNode.getIp(),
+              Integer.toString(currentNode.getPort()), currentNode.getUsername());
 
-    Util.processRegisterResponse(response, connectedNodes);
-    LOGGER.info("JoinBS response: " + response);
+      //send register  request to bs
+      String response = Util.sendMessage(joinMessage.getBytes(), bsServer.getIp(), socket, port);
 
-    StringTokenizer st = new StringTokenizer(response, " ");
-    String length = st.nextToken();
-    String command = st.nextToken();
-    int noOfNodes = Integer.parseInt(st.nextToken());
-    for (int i = 0; i < noOfNodes; i++)
-    {
-      String ip = st.nextToken();
-      String porttt = st.nextToken();
-      connectedNodes.add(new Node(ip, porttt));
-    }
+      if (response.equals("9999")) {
+          logger.info("Error in reg message");
+      } else if (response.equals("9998")) {
+          logger.info("Unregister first");
+      } else if (response.equals("9997")) {
+          logger.info("register with different ip and port");
+      } else if (response.equals("9996")) {
+          logger.info("cant register BS full");
+      }
 
-    if (LOGGER.isInfoEnabled())
-    {
-      StringBuilder stringBuilder = new StringBuilder();
-      connectedNodes.forEach(s -> stringBuilder.append(s).append(" "));
-      LOGGER.info("joinBS connectedNodes: " + stringBuilder.toString());
-    }
+      logger.info("JoinBS response: {}", () -> response);
+      String regResponse = Util.processRegisterResponse(response, connectedNodes);
 
-    LOGGER.info("JoinBS");
   }
 
   private void outgoingRequestToPairUp(final List<Node> nodes)
@@ -271,12 +278,12 @@ public class Client
       files.append(file);
     });
 
-    final byte[] buf = generateMessage(Messages.JOIN.getValue(), currentNode.getIp(),
+    final byte[] buf = Util.generateMessage(Messages.JOIN.getValue(), currentNode.getIp(),
         Integer.toString(currentNode.getPort()), Integer.toString(fileNames.size()), files.toString()).getBytes();
 
     String response = Util.sendMessage(buf,node.getIp(),socket, node.getPort());
 
-    LOGGER.info("outgoingRequestToPairUp response: " + response);
+    logger.info("outgoingRequestToPairUp response: {}", () -> response);
 
   }
 
@@ -291,37 +298,14 @@ public class Client
       packet = new DatagramPacket(buffer, buffer.length);
       socket.receive(packet);//TODO handle timeout
       final String received = new String(packet.getData(), 0, packet.getLength());
-      LOGGER.info("sendSocketMessage received: " + received);
+      logger.info("sendSocketMessage received: {}", () -> received);
       return received;
     }
     catch (IOException e)
     {
-      LOGGER.error("Exception", e);
+      logger.error("Exception", e);
       return "";
     }
-  }
-
-  private String generateMessage(final String... args)
-  {
-    final StringBuilder sb = new StringBuilder("####");
-
-    for (final String word : args)
-    {
-      if (sb.length() != 0)
-      {
-        sb.append(" ");
-      }
-      sb.append(word);
-    }
-    final String length = String.format("%04d", sb.length());
-    sb.replace(0, 4, length);
-
-    if (LOGGER.isInfoEnabled())
-    {
-      LOGGER.info("generateMessage: " + sb.toString());
-    }
-
-    return sb.toString();
   }
 
   public static void main(final String[] args)
@@ -337,7 +321,7 @@ public class Client
       }
       catch (SocketException e)
       {
-        LOGGER.error("Error while creating socket instance.", e);
+        logger.error("Error while creating socket instance.", e);
       }
     }
   }
