@@ -44,8 +44,7 @@ public class Util {
                 LOGGER.info("sendSocketMessage received: {}" ,()-> finalReceived);
             } catch (IOException e) {
                 LOGGER.error("Error while sending packet", e);
-//            } finally {
-//                socket.close();
+
             }
         }
         return received;
@@ -65,7 +64,7 @@ public class Util {
         final String length = String.format("%04d", sb.length());
         sb.replace(0, 4, length);
 
-        LOGGER.info("generateMessage: {}", sb::toString);
+    LOGGER.debug("generateMessage: {}", sb::toString);
 
         return sb.toString();
     }
@@ -83,14 +82,10 @@ public class Util {
             connectedNodes.add(new Node(ip, port));
         }
 
-
-
-        if (LOGGER.isInfoEnabled()) {
-            StringBuilder stringBuilder = new StringBuilder();
-            connectedNodes.forEach(s -> stringBuilder.append(s).append(" "));
-            LOGGER.info("joinBS connectedNodes: {}", stringBuilder::toString);
-            LOGGER.info("JoinBS Successful");
-        }
+    StringBuilder stringBuilder = new StringBuilder();
+    connectedNodes.forEach(s -> stringBuilder.append(s).append(" "));
+    LOGGER.debug("joinBS connectedNodes: {}", stringBuilder::toString);
+    LOGGER.debug("JoinBS Successful");
 
         return response;
 

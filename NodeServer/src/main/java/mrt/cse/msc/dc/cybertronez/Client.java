@@ -14,7 +14,6 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,13 +27,11 @@ public class Client
   private Set<Query> alreadySearchedQueries = new HashSet<>();
   private Map<String, Set<Node>> routingTable = new HashMap<>();
   private Set<String> fileNames = new HashSet<>();
-  DatagramSocket socket = null;
 
   public Client(final String ip, final String port, final String username) throws SocketException
   {
     currentNode = new Node(ip, port, username);
     logger = LogManager.getLogger(Client.class.getName() + " - " + currentNode.toString());
-    socket = new DatagramSocket();
 
     populateFiles();
     join();
@@ -84,7 +81,8 @@ public class Client
   }
 
   private String processSocketMessage(final String message)
-  { final String processSocketMessage = "processSocketMessage";
+  {
+    final String processSocketMessage = "processSocketMessage";
     logger.info(processSocketMessage + " message: {}", () -> message);
 
     final StringTokenizer st = new StringTokenizer(message, " ");
@@ -148,7 +146,7 @@ public class Client
       return Util
           .generateMessage(Messages.SEROK.getValue(), Messages.CODE9999.getValue()); //TODO handle search and errors
     }
-    else if (command.equals("DETAILS"))
+    else if (command.equals(Messages.DETAILS.getValue()))
     {
       StringBuilder sb = new StringBuilder();
       sb.append("Node - ").append(currentNode.toString());
@@ -165,7 +163,7 @@ public class Client
       connectedNodes.forEach(s -> {
         sb.append(s).append(" , ");
       });
-      return Util.generateMessage("DETAILS", sb.toString());
+      return Util.generateMessage(Messages.DETAILS.getValue(), sb.toString());
     }
     else
     {
@@ -235,11 +233,13 @@ public class Client
   private void joinBS()
   {
     //TODO Sachini
-    final int port = bsServer.getPort();
-    //unreg first then reg
-    String unregisterMessage = Util.generateMessage(Messages.UNREG.getValue(), currentNode.getIp(),
-        Integer.toString(currentNode.getPort()), currentNode.getUsername());
-    String unRegResponse = Util.sendMessage(unregisterMessage.getBytes(), bsServer.getIp(), socket, port);
+    try (DatagramSocket socket = new DatagramSocket())
+    {
+      final int port = bsServer.getPort();
+      //unreg first then reg
+      String unregisterMessage = Util.generateMessage(Messages.UNREG.getValue(), currentNode.getIp(),
+          Integer.toString(currentNode.getPort()), currentNode.getUsername());
+      String unRegResponse = Util.sendMessage(unregisterMessage.getBytes(), bsServer.getIp(), socket, port);
 
     if (unRegResponse.equals("9999"))
     {
@@ -269,9 +269,13 @@ public class Client
       logger.info("cant register BS full");
     }
 
-    logger.info("JoinBS response: {}", () -> response);
-    String regResponse = Util.processRegisterResponse(response, connectedNodes);
-
+      logger.info("JoinBS response: {}", () -> response);
+      String regResponse = Util.processRegisterResponse(response, connectedNodes);
+    }
+    catch (SocketException e)
+    {
+      logger.error("SocketException", e);
+    }
   }
 
   private void outgoingRequestToPairUp(final List<Node> nodes)
@@ -284,42 +288,27 @@ public class Client
 //    send pair up request to other nodes
 //    need to send hash of file names
 
-    final StringBuilder files = new StringBuilder();
-    fileNames.forEach(file -> {
-      if (files.length() != 0)
-      {
-        files.append(" , ");//TODO need to change this delim
-      }
-      files.append(file);
-    });
+    try (DatagramSocket socket = new DatagramSocket())
+    {
+      final StringBuilder files = new StringBuilder();
+      fileNames.forEach(file -> {
+        if (files.length() != 0)
+        {
+          files.append(" , ");//TODO need to change this delim
+        }
+        files.append(file);
+      });
 
     final byte[] buf = Util.generateMessage(Messages.JOIN.getValue(), currentNode.getIp(),
         Integer.toString(currentNode.getPort()), Integer.toString(fileNames.size()), files.toString()).getBytes();
 
     String response = Util.sendMessage(buf, node.getIp(), socket, node.getPort());
 
-    logger.info("outgoingRequestToPairUp response: {}", () -> response);
-
-  }
-
-  private String sendSocketMessage(String ip, int port, byte[] buffer)
-  {
-    try (final DatagramSocket socket = new DatagramSocket())
-    {
-      socket.setSoTimeout(60000);
-      final InetAddress address = InetAddress.getByName(ip);
-      DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
-      socket.send(packet);
-      packet = new DatagramPacket(buffer, buffer.length);
-      socket.receive(packet);//TODO handle timeout
-      final String received = new String(packet.getData(), 0, packet.getLength());
-      logger.info("sendSocketMessage received: {}", () -> received);
-      return received;
+      logger.info("outgoingRequestToPairUp response: {}", () -> response);
     }
-    catch (IOException e)
+    catch (SocketException e)
     {
-      logger.error("Exception", e);
-      return "";
+      logger.error("SocketException", e);
     }
   }
 

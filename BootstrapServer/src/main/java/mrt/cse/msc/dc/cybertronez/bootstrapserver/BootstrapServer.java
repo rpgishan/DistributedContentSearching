@@ -20,7 +20,7 @@ public class BootstrapServer
 {
   private static Logger logger;
 
-  public static void main(final String[] args)
+  public void startBootstrapServer()
   {
     final Node bsNode = new BootstrapNode();
     logger = LogManager.getLogger(BootstrapServer.class.getName() + " - " + bsNode.toString());
@@ -129,7 +129,7 @@ public class BootstrapServer
           final String ip = st.nextToken();
           final int port = Integer.parseInt(st.nextToken());
           final String username = st.nextToken();
-          final String reply = "0012 UNROK 0";
+          final String reply = Util.generateMessage(Messages.UNROK.getValue(),Messages.CODE0.getValue());
           for (int i = 0; i < nodes.size(); i++)
           {
             if (nodes.get(i).getPort() == port)
@@ -147,9 +147,9 @@ public class BootstrapServer
         {
           for (final Node node : nodes)
           {
-            logger.info("{} {} {}", node::getIp, node::getPort, node::getUsername);
+            logger.info("{}:{} - {}", node::getIp, node::getPort, node::getUsername);
           }
-          final String reply = "0012 ECHOK 0";
+          final String reply = Util.generateMessage(Messages.ECHOK.getValue(),Messages.CODE0.getValue());
           logger.info("Reply: {}", () -> reply);
           final DatagramPacket dpReply = new DatagramPacket(reply.getBytes(), reply.getBytes().length,
               incoming.getAddress(), incoming.getPort());
@@ -163,6 +163,11 @@ public class BootstrapServer
     {
       logger.error("IOException", e);
     }
+  }
+
+  public static void main(final String[] args)
+  {
+    new BootstrapServer().startBootstrapServer();
   }
 
 }

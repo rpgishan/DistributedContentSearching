@@ -4,7 +4,7 @@ public enum Messages
 {
   REG("REG"), REGOK("REGOK"), UNREG("UNREG"), UNROK("UNROK"), ECHO("ECHO"), ECHOK("ECHOK"), JOIN("JOIN"), JOINOK(
     "JOINOK"), LEAVE("LEAVE"), LEAVEOK("LEAVEOK"), SER("SER"), SEROK("SEROK"), ERROR("ERROR"), CODE0("0"), CODE9999(
-    "9999"), CODE9998("9998"), CODE9997("9997"), CODE9996("9996");
+    "9999"), CODE9998("9998"), CODE9997("9997"), CODE9996("9996"), DETAILS("DETAILS");
   private String value;
 
   Messages(final String value)
