@@ -40,11 +40,12 @@ public class Util {
                 packet = new DatagramPacket(responseBuffer, responseBuffer.length);
                 socket.receive(packet);
                 received = new String(packet.getData(), 0, packet.getLength());
-                LOGGER.info("sendSocketMessage received: " + received);
+                String finalReceived = received;
+                LOGGER.info("sendSocketMessage received: {}" ,()-> finalReceived);
             } catch (IOException e) {
                 LOGGER.error("Error while sending packet", e);
-            } finally {
-                socket.close();
+//            } finally {
+//                socket.close();
             }
         }
         return received;

@@ -20,4 +20,13 @@ public class Query
   {
     return initiatedNode;
   }
+
+  @Override
+  public String toString()
+  {
+    return "Query{" +
+        "query='" + query + '\'' +
+        ", initiatedNode=" + initiatedNode +
+        '}';
+  }
 }

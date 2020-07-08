@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,7 +25,7 @@ public class Client
   private Node bsServer = new BootstrapNode();
   private Node currentNode;
   private List<Node> connectedNodes = new ArrayList<>();
-  private List<Query> alreadySearchedQueries = new ArrayList<>();
+  private Set<Query> alreadySearchedQueries = new HashSet<>();
   private Map<String, Set<Node>> routingTable = new HashMap<>();
   private Set<String> fileNames = new HashSet<>();
   DatagramSocket socket = null;
@@ -83,8 +84,7 @@ public class Client
   }
 
   private String processSocketMessage(final String message)
-  {
-    final String processSocketMessage = "processSocketMessage";
+  { final String processSocketMessage = "processSocketMessage";
     logger.info(processSocketMessage + " message: {}", () -> message);
 
     final StringTokenizer st = new StringTokenizer(message, " ");
@@ -157,8 +157,12 @@ public class Client
         sb.append("\n").append(s).append(" - ");
         nodes.forEach(node -> sb.append(node).append(" , "));
       });
-      sb.append("\n*****FILE_NAMES*****");
+      sb.append("\n*****FILE_NAMES*****").append("\n");
       fileNames.forEach(s -> {
+        sb.append(s).append(" , ");
+      });
+      sb.append("\n*****CONNECTED_NODES*****").append("\n");
+      connectedNodes.forEach(s -> {
         sb.append(s).append(" , ");
       });
       return Util.generateMessage("DETAILS", sb.toString());
@@ -213,6 +217,8 @@ public class Client
 
   private boolean incomingRequestToPairUp(final Node node, final List<String> fileNames)
   {
+    logger.info("Incoming Request To Pair Up from {} with {} files.", node::toString,
+        () -> Integer.toString(fileNames.size()));
     final boolean add = connectedNodes.add(node);
     fileNames.forEach(fileName -> addDataToRoutingTable(fileName, node));
     return add;//TODO handle errors
@@ -226,36 +232,45 @@ public class Client
     }).start();
   }
 
-  private void joinBS() {
-      //TODO Sachini
-      final int port = bsServer.getPort();
-      //unreg first then reg
-      String unregisterMessage = Util.generateMessage(Messages.UNREG.getValue(), currentNode.getIp(),
-              Integer.toString(currentNode.getPort()), currentNode.getUsername());
-      String unRegResponse = Util.sendMessage(unregisterMessage.getBytes(), currentNode.getIp(), socket, port);
+  private void joinBS()
+  {
+    //TODO Sachini
+    final int port = bsServer.getPort();
+    //unreg first then reg
+    String unregisterMessage = Util.generateMessage(Messages.UNREG.getValue(), currentNode.getIp(),
+        Integer.toString(currentNode.getPort()), currentNode.getUsername());
+    String unRegResponse = Util.sendMessage(unregisterMessage.getBytes(), bsServer.getIp(), socket, port);
 
-      if (unRegResponse.equals("9999")) {
-          logger.info("Error in unreg message");
-      }
+    if (unRegResponse.equals("9999"))
+    {
+      logger.info("Error in unreg message");
+    }
 
-      String joinMessage = Util.generateMessage(Messages.REG.getValue(), currentNode.getIp(),
-              Integer.toString(currentNode.getPort()), currentNode.getUsername());
+    String joinMessage = Util.generateMessage(Messages.REG.getValue(), currentNode.getIp(),
+        Integer.toString(currentNode.getPort()), currentNode.getUsername());
 
-      //send register  request to bs
-      String response = Util.sendMessage(joinMessage.getBytes(), bsServer.getIp(), socket, port);
+    //send register  request to bs
+    String response = Util.sendMessage(joinMessage.getBytes(), bsServer.getIp(), socket, port);
 
-      if (response.equals("9999")) {
-          logger.info("Error in reg message");
-      } else if (response.equals("9998")) {
-          logger.info("Unregister first");
-      } else if (response.equals("9997")) {
-          logger.info("register with different ip and port");
-      } else if (response.equals("9996")) {
-          logger.info("cant register BS full");
-      }
+    if (response.equals("9999"))
+    {
+      logger.info("Error in reg message");
+    }
+    else if (response.equals("9998"))
+    {
+      logger.info("Unregister first");
+    }
+    else if (response.equals("9997"))
+    {
+      logger.info("register with different ip and port");
+    }
+    else if (response.equals("9996"))
+    {
+      logger.info("cant register BS full");
+    }
 
-      logger.info("JoinBS response: {}", () -> response);
-      String regResponse = Util.processRegisterResponse(response, connectedNodes);
+    logger.info("JoinBS response: {}", () -> response);
+    String regResponse = Util.processRegisterResponse(response, connectedNodes);
 
   }
 
@@ -281,7 +296,7 @@ public class Client
     final byte[] buf = Util.generateMessage(Messages.JOIN.getValue(), currentNode.getIp(),
         Integer.toString(currentNode.getPort()), Integer.toString(fileNames.size()), files.toString()).getBytes();
 
-    String response = Util.sendMessage(buf,node.getIp(),socket, node.getPort());
+    String response = Util.sendMessage(buf, node.getIp(), socket, node.getPort());
 
     logger.info("outgoingRequestToPairUp response: {}", () -> response);
 

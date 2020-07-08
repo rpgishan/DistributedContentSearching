@@ -129,21 +129,19 @@ public class BootstrapServer
           final String ip = st.nextToken();
           final int port = Integer.parseInt(st.nextToken());
           final String username = st.nextToken();
+          final String reply = "0012 UNROK 0";
           for (int i = 0; i < nodes.size(); i++)
           {
             if (nodes.get(i).getPort() == port)
             {
               nodes.remove(i);
-              final String reply = "0012 UNROK 0";
 
-              String finalReply = reply;
-              logger.info("Reply: {}", () -> finalReply);
-
-              final DatagramPacket dpReply = new DatagramPacket(reply.getBytes(), reply.getBytes().length,
-                  incoming.getAddress(), incoming.getPort());
-              sock.send(dpReply);
+              logger.info("Reply: {}", () -> reply);
             }
           }
+          final DatagramPacket dpReply = new DatagramPacket(reply.getBytes(), reply.getBytes().length,
+              incoming.getAddress(), incoming.getPort());
+          sock.send(dpReply);
         }
         else if (command.equals(Messages.ECHO.getValue()))
         {
