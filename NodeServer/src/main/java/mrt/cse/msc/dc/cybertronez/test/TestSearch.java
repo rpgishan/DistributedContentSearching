@@ -15,6 +15,7 @@ public class TestSearch
 {
   public static void main(final String[] args) throws IOException
   {
+    Util util = new Util();
     //Test
     final DatagramSocket socket;
     final InetAddress address;
@@ -50,41 +51,48 @@ public class TestSearch
 
 //    }
     Long start = Calendar.getInstance().getTimeInMillis();
-    int port = 8082;
-    int endPort = 8092;
-    while (port <= endPort)
+    Long end;
+    int startPort = 8081;
+    int noOfClients = 12;
+    int endPort = startPort + noOfClients;
+    for (int i = 0; i < 10; i++)
     {
-      //Search
-      for (String fileName : FileNamesAndQueries.QUERIES)
+      int port = startPort;
+      while (port < endPort)
       {
-//        String fileName =FileNamesAndQueries.QUERIES.get(new Random().nextInt(FileNamesAndQueries.QUERIES.size()));
+        //Search
+        for (String fileName : FileNamesAndQueries.QUERIES)
+        {
+          String generateMessage = util
+              .generateMessage(Messages.SER.getValue(), "localhost", Integer.toString(port), "0", "0", fileName);
+          System.out.println("generateMessage");
+          System.out.println(generateMessage);
+          buf = generateMessage.getBytes();
+          packet = new DatagramPacket(buf, buf.length, address, port);
+          socket.send(packet);
+          packet = new DatagramPacket(resbuf, resbuf.length);
+          socket.receive(packet);
+          received = new String(packet.getData(), 0, packet.getLength());
 
-        String generateMessage = Util
-            .generateMessage(Messages.SER.getValue(), "localhost", Integer.toString(port), "0", "0", fileName);
-        System.out.println("generateMessage");
-        System.out.println(generateMessage);
-        buf = generateMessage.getBytes();
-        packet = new DatagramPacket(buf, buf.length, address, port);
-        socket.send(packet);
-        packet = new DatagramPacket(resbuf, resbuf.length);
-        socket.receive(packet);
-        received = new String(packet.getData(), 0, packet.getLength());
-
-        System.out.println(received);
-        System.out.println();
-//        try
-//        {
-//          Thread.sleep(1000);
-//        }
-//        catch (InterruptedException e)
-//        {
-//          e.printStackTrace();
-//        }
+          System.out.println(received);
+          end = Calendar.getInstance().getTimeInMillis();
+          System.out.println("Time diff up to now: " + (end - start));
+          System.out.println();
+//
+        }
+        port++;
       }
-      port++;
+//      try
+//      {
+//        Thread.sleep(1000);
+//      }
+//      catch (InterruptedException e)
+//      {
+//        e.printStackTrace();
+//      }
     }
 
-    Long end = Calendar.getInstance().getTimeInMillis();
+    end = Calendar.getInstance().getTimeInMillis();
     System.out.println("Time diff: " + (end - start));
     System.out.println();
 

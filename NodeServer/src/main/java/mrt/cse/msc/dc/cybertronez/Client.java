@@ -6,6 +6,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -28,31 +29,46 @@ public class Client
   private Set<Query> alreadySearchedQueries = new HashSet<>();
   private Map<String, Set<Node>> routingTable = new HashMap<>();
   private Set<String> fileNames = new HashSet<>();
+  private Util util;
 
-  public Client(final String ip, final String port, final String username) throws SocketException
+  public Client(final String ip, final String port, final String username)
   {
     currentNode = new Node(ip, port, username);
     logger = LogManager.getLogger(Client.class.getName() + " - " + currentNode.toString());
+    util=new Util();
 
     populateFiles();
-    join();
     openSocket();
+    join();
   }
 
   private void openSocket()
   {
+    logger.info("Opening Socket");
     new Thread(() -> {
       try (DatagramSocket socket = new DatagramSocket(currentNode.getPort()))
       {
-        byte[] requestBuffer = new byte[65536];
+        byte[] requestBuffer;
         byte[] responseBuffer;
         boolean running = true;
+        String received;
+        DatagramPacket packet;
+        InetAddress sendersAddress;
+        int sendersPort;
 
         while (running)
         {
-          DatagramPacket packet = new DatagramPacket(requestBuffer, requestBuffer.length);
+          logger.info("Open Socket waiting in {}:{}", currentNode::getIp, currentNode::getPort);
+          requestBuffer = new byte[Util.BUFFER_SIZE];
+          packet = new DatagramPacket(requestBuffer, requestBuffer.length);
           socket.receive(packet);
-          String received = new String(packet.getData(), packet.getOffset(), packet.getLength());
+          received = new String(packet.getData(), packet.getOffset(), packet.getLength());
+
+          DatagramPacket finalPacket = packet;
+          logger.info("openSocket msg from {}:{} to current {}:{}", finalPacket::getAddress, finalPacket::getPort,
+              currentNode::getIp, currentNode::getPort);
+          String finalReceived = received;
+          logger.info("openSocket received {}", () -> finalReceived);
 
           String response;
           if (received.equals("end"))
@@ -66,11 +82,15 @@ public class Client
             response = processSocketMessage(received);
           }
 
+          logger.info("openSocket response {}", () -> response);
+
           responseBuffer = response.getBytes();
-          InetAddress address = packet.getAddress();
-          int port = packet.getPort();
-          packet = new DatagramPacket(responseBuffer, 0, responseBuffer.length, address, port);
+          sendersAddress = packet.getAddress();
+          sendersPort = packet.getPort();
+          packet = new DatagramPacket(responseBuffer, 0, responseBuffer.length, sendersAddress, sendersPort);
           socket.send(packet);
+          logger.info("openSocket response is sent to {}:{} from {}:{}", packet::getAddress, packet::getPort,
+              currentNode::getIp, currentNode::getPort);
 
         }
       }
@@ -83,8 +103,7 @@ public class Client
 
   private String processSocketMessage(final String message)
   {
-    final String processSocketMessage = "processSocketMessage";
-    logger.info(processSocketMessage + " message: {}", () -> message);
+    logger.info("processSocketMessage message: {}", () -> message);
 
     final StringTokenizer st = new StringTokenizer(message, " ");
     final String length = st.nextToken();
@@ -123,7 +142,7 @@ public class Client
       logger.info("response: {}", () -> response);
 
       final Messages code = response ? Messages.CODE0 : Messages.CODE9999;
-      return Util.generateMessage(Messages.JOINOK.getValue(), code.getValue()); //TODO handle errors
+      return util.generateMessage(Messages.JOINOK.getValue(), code.getValue()); //TODO handle errors
     }
     else if (command.equals(Messages.LEAVE.getValue()))
     {
@@ -136,7 +155,7 @@ public class Client
       logger.info("response: {}", () -> response);
 
       final Messages code = response ? Messages.CODE0 : Messages.CODE9999;
-      return Util.generateMessage(Messages.LEAVEOK.getValue(), code.getValue()); //TODO handle errors
+      return util.generateMessage(Messages.LEAVEOK.getValue(), code.getValue()); //TODO handle errors
     }
     else if (command.equals(Messages.SER.getValue()))
     {//TODO
@@ -166,7 +185,7 @@ public class Client
       }
 
       return search(new Query(fileNameBuilder.toString(), new Node(ip, port)), hops, propagatedNodes);
-//      return Util.generateMessage(Messages.SEROK.getValue(), Messages.CODE9999.getValue()); //TODO handle search and errors
+//      return util.generateMessage(Messages.SEROK.getValue(), Messages.CODE9999.getValue()); //TODO handle search and errors
     }
     else if (command.equals(Messages.DETAILS.getValue()))
     {
@@ -185,11 +204,11 @@ public class Client
       connectedNodes.forEach(s -> {
         sb.append(s).append(" , ");
       });
-      return Util.generateMessage(Messages.DETAILS.getValue(), sb.toString());
+      return util.generateMessage(Messages.DETAILS.getValue(), sb.toString());
     }
     else
     {
-      return Util.generateMessage(Messages.ERROR.toString());
+      return util.generateMessage(Messages.ERROR.toString());
     }
 
   }
@@ -224,7 +243,7 @@ public class Client
       propagatedNodes.forEach(node -> {
         propagatedNodesBuilder.append(" ").append(node.getIp()).append(" ").append(node.getPort());
       });
-      return Util.generateMessage(Messages.SEROK.getValue(), Messages.CODE9999.getValue(),
+      return util.generateMessage(Messages.SEROK.getValue(), Messages.CODE9998.getValue(),
           Messages.ALREADY_SEARCHED.getValue(), Integer.toString(hops), propagatedNodesBuilder.toString());
     }
     alreadySearchedQueries.add(query);
@@ -269,7 +288,16 @@ public class Client
 
     List<String> foundFileNames = foundFiles.stream().map(fileName -> fileName.replace(' ', '_'))
         .collect(Collectors.toList());
-    StringBuilder sb = new StringBuilder();
+    String fileNameStrings = convertFileNameListToString(foundFileNames);
+
+    return util.generateMessage(Messages.SEROK.getValue(), Messages.CODE0.getValue(), Integer.toString(hops),
+        getCollectionNodesToString(propagatedNodes), fileNameStrings);
+    //TODO handle errors
+  }
+
+  private String convertFileNameListToString(List<String> foundFileNames)
+  {
+    StringBuilder sb = new StringBuilder(Integer.toString(foundFileNames.size()));
     foundFileNames.forEach(name -> {
       if (sb.length() != 0)
       {
@@ -277,11 +305,7 @@ public class Client
       }
       sb.append(name);
     });
-
-    return Util
-        .generateMessage(Messages.SEROK.getValue(), Messages.CODE0.getValue(), Integer.toString(hops),
-            Integer.toString(foundFileNames.size()), sb.toString());
-    //TODO handle errors
+    return sb.toString();
   }
 
   private String propagateSearch(Query query, int hops, Set<Node> propagatedNodes)
@@ -299,23 +323,23 @@ public class Client
           continue;
         }
 
-        String propagatedNodesString = getPropagatedNodesString(propagatedNodes);
+        String propagatedNodesString = getCollectionNodesToString(propagatedNodes);
 
-        byte[] buffer = Util.generateMessage(Messages.SER.getValue(), query.getInitiatedNode().getIp(),
+        byte[] buffer = util.generateMessage(Messages.SER.getValue(), query.getInitiatedNode().getIp(),
             Integer.toString(query.getInitiatedNode().getPort()), Integer.toString(hops),
             propagatedNodesString, query.getQuery()).getBytes();
-        String response = Util.sendMessage(buffer, node.getIp(), socket, node.getPort());
+        String response = util.sendMessage(buffer, node.getIp(), socket, node.getPort());
         StringTokenizer st = new StringTokenizer(response, " ");
         String length = st.nextToken();
         String command = st.nextToken();
         if (command.equals(Messages.SEROK.getValue()))
         {
           String code = st.nextToken();
-          if (code.equals(Messages.CODE0.getValue()))
+          if (code.equals(Messages.CODE0.getValue()) || code.equals(Messages.ERROR.getValue()))
           {
             return response;
           }
-          else if (code.equals(Messages.CODE9999.getValue()))
+          else if (code.equals(Messages.CODE9998.getValue()))
           {
             String error = st.nextToken();
             int newHops = Integer.parseInt(st.nextToken());
@@ -344,19 +368,18 @@ public class Client
     int finalHops1 = hops;
     logger.info("File not found for \"{}\" in {}. Current hops: {}", () -> query, currentNode::toString, () -> finalHops1);
 
-    String propagatedNodesString = getPropagatedNodesString(propagatedNodes);
+    String propagatedNodesString = getCollectionNodesToString(propagatedNodes);
 
-    return Util.generateMessage(Messages.SEROK.getValue(), Messages.CODE9999.getValue(), Messages.NOT_FOUND.getValue(),
+    return util.generateMessage(Messages.SEROK.getValue(), Messages.CODE9998.getValue(), Messages.NOT_FOUND.getValue(),
         Integer.toString(hops),propagatedNodesString);
   }
 
-  private String getPropagatedNodesString(Set<Node> propagatedNodes)
+  private String getCollectionNodesToString(Collection<Node> nodeCollection)
   {
-    StringBuilder propagatedNodesBuilder = new StringBuilder(Integer.toString(propagatedNodes.size()));
-    for (Node propagatedNode : propagatedNodes)
+    StringBuilder propagatedNodesBuilder = new StringBuilder(Integer.toString(nodeCollection.size()));
+    for (Node node : nodeCollection)
     {
-      propagatedNodesBuilder.append(" ").append(propagatedNode.getIp()).append(" ")
-          .append(propagatedNode.getPort());
+      propagatedNodesBuilder.append(" ").append(node.getIp()).append(" ").append(node.getPort());
     }
     return propagatedNodesBuilder.toString();
   }
@@ -400,20 +423,20 @@ public class Client
     {
       final int port = bsServer.getPort();
       //unreg first then reg
-      String unregisterMessage = Util.generateMessage(Messages.UNREG.getValue(), currentNode.getIp(),
+      String unregisterMessage = util.generateMessage(Messages.UNREG.getValue(), currentNode.getIp(),
           Integer.toString(currentNode.getPort()), currentNode.getUsername());
-      String unRegResponse = Util.sendMessage(unregisterMessage.getBytes(), bsServer.getIp(), socket, port);
+      String unRegResponse = util.sendMessage(unregisterMessage.getBytes(), bsServer.getIp(), socket, port);
 
     if (unRegResponse.equals("9999"))
     {
       logger.info("Error in unreg message");
     }
 
-    String joinMessage = Util.generateMessage(Messages.REG.getValue(), currentNode.getIp(),
+    String joinMessage = util.generateMessage(Messages.REG.getValue(), currentNode.getIp(),
         Integer.toString(currentNode.getPort()), currentNode.getUsername());
 
     //send register  request to bs
-    String response = Util.sendMessage(joinMessage.getBytes(), bsServer.getIp(), socket, port);
+    String response = util.sendMessage(joinMessage.getBytes(), bsServer.getIp(), socket, port);
 
     if (response.equals("9999"))
     {
@@ -433,7 +456,7 @@ public class Client
     }
 
       logger.info("JoinBS response: {}", () -> response);
-      String regResponse = Util.processRegisterResponse(response, connectedNodes);
+      String regResponse = util.processRegisterResponse(response, connectedNodes);
     }
     catch (SocketException e)
     {
@@ -462,10 +485,10 @@ public class Client
         files.append(file);
       });
 
-    final byte[] buf = Util.generateMessage(Messages.JOIN.getValue(), currentNode.getIp(),
+    final byte[] buf = util.generateMessage(Messages.JOIN.getValue(), currentNode.getIp(),
         Integer.toString(currentNode.getPort()), Integer.toString(fileNames.size()), files.toString()).getBytes();
 
-    String response = Util.sendMessage(buf, node.getIp(), socket, node.getPort());
+    String response = util.sendMessage(buf, node.getIp(), socket, node.getPort());
 
       logger.info("outgoingRequestToPairUp response: {}", () -> response);
     }
@@ -482,14 +505,9 @@ public class Client
       final String ip = args[0];
       final String port = args[1];
       final String username = args[2];
-      try
-      {
-        final Client client = new Client(ip, port, username);
-      }
-      catch (SocketException e)
-      {
-        logger.error("Error while creating socket instance.", e);
-      }
+
+      final Client client = new Client(ip, port, username);
+
     }
   }
 }

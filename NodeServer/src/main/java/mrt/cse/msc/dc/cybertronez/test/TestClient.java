@@ -15,6 +15,7 @@ public class TestClient
 {
   public static void main(final String[] args) throws IOException
   {
+    Util util = new Util();
     final DatagramSocket socket;
     final InetAddress address;
     DatagramPacket packet;
@@ -52,7 +53,7 @@ public class TestClient
     int port = 8082;
     //Search
 
-    buf = Util.generateMessage(Messages.SER.getValue(), "localhost", Integer.toString(port), "0", "0",
+    buf = util.generateMessage(Messages.SER.getValue(), "localhost", Integer.toString(port), "0", "0",
         FileNamesAndQueries.QUERIES.get(new Random().nextInt(FileNamesAndQueries.QUERIES.size()))).getBytes();
     packet = new DatagramPacket(buf, buf.length, address, port);
     socket.send(packet);
@@ -65,7 +66,7 @@ public class TestClient
     System.out.println("Time diff: " + (end - start));
     System.out.println();
 
-    buf = Util.generateMessage("DETAILS").getBytes();
+    buf = util.generateMessage("DETAILS").getBytes();
     packet = new DatagramPacket(buf, buf.length, address, port);
     socket.send(packet);
     packet = new DatagramPacket(resbuf, resbuf.length);
