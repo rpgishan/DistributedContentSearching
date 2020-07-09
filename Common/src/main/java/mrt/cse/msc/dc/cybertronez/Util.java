@@ -20,6 +20,7 @@ public class Util {
 
     private static final Logger LOGGER = LogManager.getLogger(Util.class);
     public static final int BUFFER_SIZE = 10000;
+    private HashGenerator hashGenerator = new HashGenerator();
     public String sendMessage(byte[] message, String hostName, DatagramSocket socket, int port) {
 
         InetAddress address = null;
@@ -97,10 +98,7 @@ public class Util {
 
     }
 
-    public static List<String> extractFileNames(StringTokenizer st) {
-
-        final String ip = st.nextToken();
-        final String port = st.nextToken();
+    public  List<String> extractFileNames(StringTokenizer st) {
 
         final int noOfFiles = Integer.parseInt(st.nextToken());
         final List<String> fileNames = new ArrayList<>(noOfFiles);
@@ -126,29 +124,34 @@ public class Util {
         return fileNames;
     }
 
-    public static Node selectNode(String fileName, List<Node> nodeList) {
+    public  Node selectNode(String fileName, List<Node> nodeList) {
 
-        String fileHash = HashGenerator.getHash(fileName);
+        String fileHash = hashGenerator.getHash(fileName);
         List<Integer> diffList = new ArrayList<>();
         for (int i = 0; i < nodeList.size(); i++) {
             Node currentNode = nodeList.get(i);
-            int diff = HashGenerator.getDifference(fileHash.getBytes(), currentNode.getUserNameHash().getBytes());
+            int diff = hashGenerator.getDifference(fileHash.getBytes(), currentNode.getUserNameHash().getBytes());
             diffList.add(diff);
         }
         int nodeIndex = Collections.min(diffList);
         return nodeList.get(nodeIndex);
     }
+/*
+    public  List<String> selectFilesForNode(List<String> fileList, List<Node> nodeList) {
 
-    public static List<Node> setNodeHashes(List<Node> nodeList) {
-
-        for (int i = 0; i < nodeList.size(); i++) {
-            Node currentNode = nodeList.get(i);
-            String nodeHash = HashGenerator.getHash(currentNode.getUsername());
-            currentNode.setUserNameHash(nodeHash);
-        }
-        return nodeList;
-    }
+        fileList.forEach(fileName -> {
+            int diff = 0;
+            String fileHash = hashGenerator.getHash(fileName);
+            nodeList.forEach(node -> {
 
 
+            });
+        });
+            Node nodeToSendFile = util.selectNode(fileName, connectedNodes);
+            final byte[] buf = util.generateMessage(Messages.JOIN.getValue(), currentNode.getIp(),
+                    Integer.toString(currentNode.getPort()), Integer.toString(fileNames.size()), fileName).getBytes();
+            String response = util.sendMessage(buf, nodeToSendFile.getIp(), socket, nodeToSendFile.getPort());
+            logger.info("outgoingRequestToPairUp response: {}", () -> response);
 
+    }*/
 }

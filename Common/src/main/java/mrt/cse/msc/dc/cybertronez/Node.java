@@ -40,6 +40,7 @@ public class Node
     this.ip = ip;
     this.port = port;
     this.username = username;
+    this.userNameHash = new HashGenerator().getHash(username);
   }
 
   public String getIp()

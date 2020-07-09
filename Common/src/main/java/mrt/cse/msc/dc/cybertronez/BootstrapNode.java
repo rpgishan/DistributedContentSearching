@@ -4,6 +4,6 @@ public class BootstrapNode extends Node
 {
   public BootstrapNode()
   {
-    super("192.168.1.10", 55555, "bootstrap");
+    super("127.0.0.1", 55555, "bootstrap");
   }
 }

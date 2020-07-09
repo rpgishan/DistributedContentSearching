@@ -10,7 +10,7 @@ import java.util.List;
 
 public class HashGenerator
 {
-  public static String getHash(final String word)
+  public String getHash(final String word)
   {
     final String hash = "";
     try
@@ -28,7 +28,7 @@ public class HashGenerator
     return hash;
   }
 
-  public static String bytesToHex(final byte[] hashes)
+  public  String bytesToHex(final byte[] hashes)
   {
     final StringBuilder hexString = new StringBuilder();
 
@@ -47,7 +47,7 @@ public class HashGenerator
     return hexString.toString();
   }
 
-    public static int getDifference(byte[] fileName, byte[] nodeId) {
+    public  int getDifference(byte[] fileName, byte[] nodeId) {
 
         int diff = 0;
         ArrayList<Integer> diffList = new ArrayList<>();
