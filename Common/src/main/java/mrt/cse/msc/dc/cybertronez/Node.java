@@ -8,6 +8,18 @@ public class Node
   private int port;
   private String username;
 
+  public String getUserNameHash() {
+
+    return userNameHash;
+  }
+
+  public void setUserNameHash(String userNameHash) {
+
+    this.userNameHash = userNameHash;
+  }
+
+  private String userNameHash;
+
   public Node(final String ip, final String port, final String username)
   {
     this(ip, Integer.parseInt(port), username);

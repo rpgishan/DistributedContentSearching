@@ -1,12 +1,16 @@
 package mrt.cse.msc.dc.cybertronez;
 
+import org.apache.commons.codec.digest.DigestUtils;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class HashGenerator
 {
-  String getHash(final String word)
+  public static String getHash(final String word)
   {
     final String hash = "";
     try
@@ -24,7 +28,7 @@ public class HashGenerator
     return hash;
   }
 
-  private String bytesToHex(final byte[] hashes)
+  public static String bytesToHex(final byte[] hashes)
   {
     final StringBuilder hexString = new StringBuilder();
 
@@ -42,4 +46,20 @@ public class HashGenerator
 
     return hexString.toString();
   }
+
+    public static int getDifference(byte[] fileName, byte[] nodeId) {
+
+        int diff = 0;
+        ArrayList<Integer> diffList = new ArrayList<>();
+        for (int i = 0; i < 64; i++)
+        {
+          diff = diff + Math.abs(fileName[i] - nodeId[i]);
+        }
+
+        return diff;
+    }
+
+
+
+
 }
