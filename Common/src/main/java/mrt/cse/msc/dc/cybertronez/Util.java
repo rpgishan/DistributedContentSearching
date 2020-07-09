@@ -6,7 +6,11 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 import org.apache.logging.log4j.LogManager;
@@ -90,5 +94,59 @@ public class Util {
         return response;
 
     }
+
+    public static List<String> extractFileNames(StringTokenizer st) {
+
+        final String ip = st.nextToken();
+        final String port = st.nextToken();
+
+        final int noOfFiles = Integer.parseInt(st.nextToken());
+        final List<String> fileNames = new ArrayList<>(noOfFiles);
+        StringBuilder sb;
+
+        for (int i = 0; i < noOfFiles; i++) {
+
+            String fileNameSeg = st.nextToken();
+            sb = new StringBuilder();
+            while (!fileNameSeg.equals(",")) {
+                if (sb.length() != 0) {
+                    sb.append(" ");
+                }
+                sb.append(fileNameSeg);
+                if (st.hasMoreElements()) {
+                    fileNameSeg = st.nextToken();
+                    continue;
+                }
+                break;
+            }
+            fileNames.add(sb.toString());
+        }
+        return fileNames;
+    }
+
+    public static Node selectNode(String fileName, List<Node> nodeList) {
+
+        String fileHash = HashGenerator.getHash(fileName);
+        List<Integer> diffList = new ArrayList<>();
+        for (int i = 0; i < nodeList.size(); i++) {
+            Node currentNode = nodeList.get(i);
+            int diff = HashGenerator.getDifference(fileHash.getBytes(), currentNode.getUserNameHash().getBytes());
+            diffList.add(diff);
+        }
+        int nodeIndex = Collections.min(diffList);
+        return nodeList.get(nodeIndex);
+    }
+
+    public static List<Node> setNodeHashes(List<Node> nodeList) {
+
+        for (int i = 0; i < nodeList.size(); i++) {
+            Node currentNode = nodeList.get(i);
+            String nodeHash = HashGenerator.getHash(currentNode.getUsername());
+            currentNode.setUserNameHash(nodeHash);
+        }
+        return nodeList;
+    }
+
+
 
 }
