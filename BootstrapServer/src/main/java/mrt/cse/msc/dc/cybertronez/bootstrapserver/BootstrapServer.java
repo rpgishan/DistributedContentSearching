@@ -19,6 +19,7 @@ import mrt.cse.msc.dc.cybertronez.Util;
 public class BootstrapServer
 {
   private static Logger logger;
+  private Util util = new Util();
 
   public void startBootstrapServer()
   {
@@ -116,7 +117,7 @@ public class BootstrapServer
             }
           }
 
-          final String reply = Util.generateMessage(replyBuilder.toString());
+          final String reply = util.generateMessage(replyBuilder.toString());
 
           logger.info("Reply: {}", () -> reply);
 
@@ -129,7 +130,7 @@ public class BootstrapServer
           final String ip = st.nextToken();
           final int port = Integer.parseInt(st.nextToken());
           final String username = st.nextToken();
-          final String reply = Util.generateMessage(Messages.UNROK.getValue(),Messages.CODE0.getValue());
+          final String reply = util.generateMessage(Messages.UNROK.getValue(),Messages.CODE0.getValue());
           for (int i = 0; i < nodes.size(); i++)
           {
             if (nodes.get(i).getPort() == port)
@@ -149,7 +150,7 @@ public class BootstrapServer
           {
             logger.info("{}:{} - {}", node::getIp, node::getPort, node::getUsername);
           }
-          final String reply = Util.generateMessage(Messages.ECHOK.getValue(),Messages.CODE0.getValue());
+          final String reply = util.generateMessage(Messages.ECHOK.getValue(),Messages.CODE0.getValue());
           logger.info("Reply: {}", () -> reply);
           final DatagramPacket dpReply = new DatagramPacket(reply.getBytes(), reply.getBytes().length,
               incoming.getAddress(), incoming.getPort());

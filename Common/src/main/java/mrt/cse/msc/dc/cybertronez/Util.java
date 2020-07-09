@@ -19,43 +19,45 @@ import org.apache.logging.log4j.Logger;
 public class Util {
 
     private static final Logger LOGGER = LogManager.getLogger(Util.class);
-
-    public static String sendMessage(byte[] message, String hostName, DatagramSocket socket, int port) {
+    public static final int BUFFER_SIZE = 10000;
+    public String sendMessage(byte[] message, String hostName, DatagramSocket socket, int port) {
 
         InetAddress address = null;
         String received = "";
 
         try {
             socket.setSoTimeout(60000);
-
             address = InetAddress.getByName(hostName);
-
         } catch (UnknownHostException e) {
             LOGGER.error("Error while retrieving InetAddress ", e);
         } catch (SocketException e) {
             LOGGER.error("Error while setting socket timeout ", e);
         }
 
-        byte[] responseBuffer = new byte[65536];
+        byte[] responseBuffer = new byte[BUFFER_SIZE];
         if (address != null) {
             DatagramPacket packet = new DatagramPacket(message, message.length, address, port);
             try {
                 socket.send(packet);
+
+                LOGGER.info("sendSocketMessage sent to {}:{} from {}:{}:{}", () -> hostName, () -> port,
+                    socket::getLocalAddress, socket::getPort, socket::getLocalPort);
+                LOGGER.info("sendSocketMessage sent: {}", () -> new String(message));
+
                 packet = new DatagramPacket(responseBuffer, responseBuffer.length);
                 socket.receive(packet);
                 received = new String(packet.getData(), 0, packet.getLength());
                 String finalReceived = received;
-                LOGGER.info("sendSocketMessage received: {}" ,()-> finalReceived);
+                LOGGER.info("sendSocketMessage received: {}", () -> finalReceived);
             } catch (IOException e) {
                 LOGGER.error("Error while sending packet", e);
-
             }
         }
-        return received;
 
+        return received;
     }
 
-    public static String generateMessage(final String... args) {
+    public String generateMessage(final String... args) {
 
         final StringBuilder sb = new StringBuilder("####");
 
@@ -73,7 +75,7 @@ public class Util {
         return sb.toString();
     }
 
-    public static String processRegisterResponse(String response, List<Node> connectedNodes) {
+    public String processRegisterResponse(String response, List<Node> connectedNodes) {
 
         StringTokenizer st = new StringTokenizer(response, " ");
         String length = st.nextToken();
