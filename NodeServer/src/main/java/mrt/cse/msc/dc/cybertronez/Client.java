@@ -8,6 +8,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,14 +29,14 @@ public class Client
   private Map<String, Set<Node>> routingTable = new HashMap<>();
   private Set<String> fileNames = new HashSet<>();
 
-  public Client(final String ip, final String port, final String username) throws SocketException
+  public Client(final String ip, final String port, final String username)
   {
     currentNode = new Node(ip, port, username);
     logger = LogManager.getLogger(Client.class.getName() + " - " + currentNode.toString());
 
-    populateFiles();
-    join();
-    openSocket();
+      populateFiles();
+      openSocket();
+      join();
   }
 
   private void openSocket()
@@ -91,38 +92,7 @@ public class Client
 
     if (command.equals(Messages.JOIN.getValue()))
     {
-      final String ip = st.nextToken();
-      final String port = st.nextToken();
-      final int noOfFiles = Integer.parseInt(st.nextToken());
-      final List<String> fileNames = new ArrayList<>(noOfFiles);
-      StringBuilder sb;
-      for (int i = 0; i < noOfFiles; i++)
-      {
-        String fileNameSeg = st.nextToken();
-        sb = new StringBuilder();
-        while (!fileNameSeg.equals(","))
-        {
-          if (sb.length() != 0)
-          {
-            sb.append(" ");
-          }
-          sb.append(fileNameSeg);
-          if (st.hasMoreElements())
-          {
-            fileNameSeg = st.nextToken();
-            continue;
-          }
-          break;
-        }
-        fileNames.add(sb.toString());
-      }
-
-      final boolean response = incomingRequestToPairUp(ip, port, fileNames);
-
-      logger.info("response: {}", () -> response);
-
-      final Messages code = response ? Messages.CODE0 : Messages.CODE9999;
-      return Util.generateMessage(Messages.JOINOK.getValue(), code.getValue()); //TODO handle errors
+      return procesJoinRequest(st); //TODO handle errors
     }
     else if (command.equals(Messages.LEAVE.getValue()))
     {
@@ -143,8 +113,7 @@ public class Client
       final String port = st.nextToken();
       final String fileName = st.nextToken();
       final String hops = st.nextToken();
-      return Util
-          .generateMessage(Messages.SEROK.getValue(), Messages.CODE9999.getValue()); //TODO handle search and errors
+      return Util.generateMessage(Messages.SEROK.getValue(), Messages.CODE9999.getValue()); //TODO handle search and errors
     }
     else if (command.equals(Messages.DETAILS.getValue()))
     {
@@ -232,7 +201,6 @@ public class Client
 
   private void joinBS()
   {
-    //TODO Sachini
     try (DatagramSocket socket = new DatagramSocket())
     {
       final int port = bsServer.getPort();
@@ -280,6 +248,8 @@ public class Client
 
   private void outgoingRequestToPairUp(final List<Node> nodes)
   {
+      //call this when using hashes
+      // nodes.forEach(this::forwardFileNames);
     nodes.forEach(this::outgoingRequestToPairUp);
   }
 
@@ -299,6 +269,8 @@ public class Client
         files.append(file);
       });
 
+      //select the node to send each file
+
     final byte[] buf = Util.generateMessage(Messages.JOIN.getValue(), currentNode.getIp(),
         Integer.toString(currentNode.getPort()), Integer.toString(fileNames.size()), files.toString()).getBytes();
 
@@ -312,6 +284,40 @@ public class Client
     }
   }
 
+    private void forwardFileNames() {
+//    send pair up request to other nodes
+//    need to send hash of file names
+        List<Node> nodeListWithHashes = Util.setNodeHashes(connectedNodes);
+
+        try (DatagramSocket socket = new DatagramSocket()) {
+            Iterator<String> it = fileNames.iterator();
+            while (it.hasNext()) {
+                String fileName = it.next();
+                //select the node to send each file
+                Node nodeToSendFile = Util.selectNode(fileName, nodeListWithHashes);
+                final byte[] buf = Util.generateMessage(Messages.JOIN.getValue(), currentNode.getIp(),
+                        Integer.toString(currentNode.getPort()), Integer.toString(fileNames.size()), fileName).getBytes();
+                String response = Util.sendMessage(buf, nodeToSendFile.getIp(), socket, nodeToSendFile.getPort());
+                logger.info("outgoingRequestToPairUp response: {}", () -> response);
+            }
+        } catch (SocketException e) {
+            logger.error("SocketException", e);
+        }
+    }
+
+    private String procesJoinRequest(StringTokenizer st) {
+
+        final String ip = st.nextToken();
+        final String port = st.nextToken();
+        final List<String> fileNames = Util.extractFileNames(st);
+        final boolean response = incomingRequestToPairUp(ip, port, fileNames);
+
+        logger.info("response: {}", () -> response);
+
+        final Messages code = response ? Messages.CODE0 : Messages.CODE9999;
+        return Util.generateMessage(Messages.JOINOK.getValue(), code.getValue());
+    }
+
   public static void main(final String[] args)
   {
     if (args.length == 3)
@@ -319,14 +325,7 @@ public class Client
       final String ip = args[0];
       final String port = args[1];
       final String username = args[2];
-      try
-      {
-        final Client client = new Client(ip, port, username);
-      }
-      catch (SocketException e)
-      {
-        logger.error("Error while creating socket instance.", e);
-      }
+      final Client client = new Client(ip, port, username);
     }
   }
 }
