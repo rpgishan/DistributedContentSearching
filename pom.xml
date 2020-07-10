@@ -12,6 +12,7 @@
         <module>Common</module>
         <module>BootstrapServer</module>
         <module>NodeServer</module>
+        <module>TestRun</module>
     </modules>
 
     <properties>
