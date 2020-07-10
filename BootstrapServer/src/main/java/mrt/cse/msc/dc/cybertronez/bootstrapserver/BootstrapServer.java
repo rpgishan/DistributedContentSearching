@@ -11,7 +11,6 @@ import java.util.StringTokenizer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import mrt.cse.msc.dc.cybertronez.BootstrapNode;
 import mrt.cse.msc.dc.cybertronez.Messages;
 import mrt.cse.msc.dc.cybertronez.Node;
 import mrt.cse.msc.dc.cybertronez.Util;
@@ -21,12 +20,17 @@ public class BootstrapServer {
     private static Logger logger;
     private Util util = new Util();
 
-    public void startBootstrapServer() {
+  public static void main(final String[] args)
+  {
+    new BootstrapServer().startBootstrapServer();
+  }
 
-        final Node bsNode = new BootstrapNode();
-        logger = LogManager.getLogger(BootstrapServer.class.getName() + " - " + bsNode.toString());
-        String s;
-        final List<Node> nodes = new ArrayList<>();
+  private void startBootstrapServer()
+  {
+    final Node bsNode = new Node("localhost", 55555);
+    logger = LogManager.getLogger(BootstrapServer.class.getName() + " - " + bsNode.toString());
+    String s;
+    final List<Node> nodes = new ArrayList<>();
 
         try (DatagramSocket sock = new DatagramSocket(bsNode.getPort())) {
             logger.info("Bootstrap Server created at {}. Waiting for incoming data...", bsNode::getPort);
@@ -136,11 +140,6 @@ public class BootstrapServer {
         } catch (IOException e) {
             logger.error("IOException", e);
         }
-    }
-
-    public static void main(final String[] args) {
-
-        new BootstrapServer().startBootstrapServer();
     }
 
 }

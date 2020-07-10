@@ -5,19 +5,26 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
-public class HashGenerator {
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-    public String getHash(final String word) {
+public class HashGenerator
+{
+  private static final Logger LOGGER= LogManager.getLogger(HashGenerator.class);
+  public String getHash(final String word)
+  {
+    final String hash = "";
+    try
+    {
+      final MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      final byte[] encodedHash = digest.digest(word.getBytes(StandardCharsets.UTF_8));
 
-        final String hash = "";
-        try {
-            final MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            final byte[] encodedHash = digest.digest(word.getBytes(StandardCharsets.UTF_8));
-
-            return bytesToHex(encodedHash);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
+      return bytesToHex(encodedHash);
+    }
+    catch (NoSuchAlgorithmException e)
+    {
+      LOGGER.error("NoSuchAlgorithmException", e);
+    }
 
         return hash;
     }

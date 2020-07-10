@@ -19,15 +19,15 @@ public class Util {
 
     private static final Logger LOGGER = LogManager.getLogger(Util.class);
     public static final int BUFFER_SIZE = 10000;
+    public static final int DEFAULT_TIMEOUT = 30000;
     private HashGenerator hashGenerator = new HashGenerator();
-
-    public String sendMessage(byte[] message, String hostName, DatagramSocket socket, int port) {
+    public String sendMessage(byte[] message, String hostName, DatagramSocket socket, int port, int timeout) {
 
         InetAddress address = null;
         String received = "";
 
         try {
-            socket.setSoTimeout(60000);
+            socket.setSoTimeout(timeout);
             address = InetAddress.getByName(hostName);
         } catch (UnknownHostException e) {
             LOGGER.error("Error while retrieving InetAddress ", e);
@@ -41,15 +41,15 @@ public class Util {
             try {
                 socket.send(packet);
 
-                LOGGER.info("sendSocketMessage sent to {}:{} from {}:{}:{}", () -> hostName, () -> port,
-                        socket::getLocalAddress, socket::getPort, socket::getLocalPort);
-                LOGGER.info("sendSocketMessage sent: {}", () -> new String(message));
+                LOGGER.debug("sendSocketMessage sent to {}:{} from {}:{}:{}", () -> hostName, () -> port,
+                    socket::getLocalAddress, socket::getPort, socket::getLocalPort);
+                LOGGER.debug("sendSocketMessage sent: {}", () -> new String(message));
 
                 packet = new DatagramPacket(responseBuffer, responseBuffer.length);
                 socket.receive(packet);
                 received = new String(packet.getData(), 0, packet.getLength());
                 String finalReceived = received;
-                LOGGER.info("sendSocketMessage received: {}", () -> finalReceived);
+                LOGGER.debug("sendSocketMessage received: {}", () -> finalReceived);
             } catch (IOException e) {
                 LOGGER.error("Error while sending packet", e);
             }
@@ -76,6 +76,21 @@ public class Util {
         return sb.toString();
     }
 
+    boolean isSocketAvailable(Node node)
+    {
+        try (DatagramSocket socket = new DatagramSocket())
+        {
+            byte[] pingMsg = generateMessage(Messages.PING.getValue()).getBytes();
+            String response = sendMessage(pingMsg, node.getIp(), socket, node.getPort(), 5000);
+            return response.contains(Messages.PING_OK.getValue());
+        }
+        catch (SocketException e)
+        {
+            LOGGER.error("SocketException", e);
+        }
+        return false;
+    }
+
     public String processRegisterResponse(String response, List<Node> connectedNodes) {
 
         StringTokenizer st = new StringTokenizer(response, " ");
@@ -98,29 +113,18 @@ public class Util {
 
     }
 
-    public List<String> extractFileNames(StringTokenizer st) {
-
+    public List<String> extractFileNames(StringTokenizer st)
+    {
         final int noOfFiles = Integer.parseInt(st.nextToken());
         final List<String> fileNames = new ArrayList<>(noOfFiles);
-        StringBuilder sb;
+        String fileNameSeg = st.nextToken();
+        StringTokenizer fileNameTokenizer = new StringTokenizer(fileNameSeg, ",");
 
-        for (int i = 0; i < noOfFiles; i++) {
-
-            String fileNameSeg = st.nextToken();
-            sb = new StringBuilder();
-            while (!fileNameSeg.equals(",")) {
-                if (sb.length() != 0) {
-                    sb.append(" ");
-                }
-                sb.append(fileNameSeg);
-                if (st.hasMoreElements()) {
-                    fileNameSeg = st.nextToken();
-                    continue;
-                }
-                break;
-            }
-            fileNames.add(sb.toString());
+        for (int i = 0; i < noOfFiles; i++)
+        {
+            fileNames.add(fileNameTokenizer.nextToken());
         }
+
         return fileNames;
     }
 
