@@ -412,7 +412,7 @@ public class Client
   {
     new Thread(() -> {
       joinBS();
-      outgoingRequestToPairUp(connectedNodes);
+      outgoingRequestToPairUp();
     }).start();
   }
 
@@ -464,11 +464,16 @@ public class Client
     }
   }
 
-  private void outgoingRequestToPairUp(final List<Node> nodes)
+  private void outgoingRequestToPairUp()
   {
       //call this when using hashes
       // nodes.forEach(this::forwardFileNames);
-    nodes.forEach(this::outgoingRequestToPairUp);
+      //assign file list for each node
+      /*if (!connectedNodes.isEmpty()) {
+          util.selectFilesForNode(fileNames, connectedNodes);
+          connectedNodes.forEach(this::forwardFileNames);
+      }*/
+      connectedNodes.forEach(this::outgoingRequestToPairUp);
   }
 
   private void outgoingRequestToPairUp(final Node node)
@@ -500,22 +505,23 @@ public class Client
     }
   }
 
-    private void forwardFileNames() {
+    private void forwardFileNames(Node node) {
 //    send pair up request to other nodes
 //    need to send hash of file names
-        /*try (DatagramSocket socket = new DatagramSocket()) {
-            List<String> fileList =
-            fileNames.forEach(fileName -> {
+        try (DatagramSocket socket = new DatagramSocket()) {
 
-                Node nodeToSendFile = util.selectNode(fileName, connectedNodes);
-                final byte[] buf = util.generateMessage(Messages.JOIN.getValue(), currentNode.getIp(),
-                        Integer.toString(currentNode.getPort()), Integer.toString(fileNames.size()), fileName).getBytes();
-                String response = util.sendMessage(buf, nodeToSendFile.getIp(), socket, nodeToSendFile.getPort());
-                logger.info("outgoingRequestToPairUp response: {}", () -> response);
-            });
+            int fileSize = node.getFieList().toString().split(",").length;
+            final byte[] buf = util.generateMessage(Messages.JOIN.getValue(), currentNode.getIp(),
+                    Integer.toString(currentNode.getPort()), Integer.toString(fileSize),
+                    node.getFieList().toString()).getBytes();
+
+            String response = util.sendMessage(buf, node.getIp(), socket, node.getPort());
+
+            logger.info("outgoingRequestToPairUp response: {}", () -> response);
+
         } catch (SocketException e) {
             logger.error("SocketException", e);
-        }*/
+        }
     }
 
     private String processJoinRequest(StringTokenizer st) {

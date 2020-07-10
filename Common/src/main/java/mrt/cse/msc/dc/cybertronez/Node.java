@@ -1,5 +1,7 @@
 package mrt.cse.msc.dc.cybertronez;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class Node
@@ -7,6 +9,24 @@ public class Node
   private String ip;
   private int port;
   private String username;
+  private String userNameHash;
+  private StringBuilder fieList = new StringBuilder();
+
+
+  public StringBuilder getFieList() {
+
+    return fieList;
+  }
+
+  public void addFileToList(String fileName) {
+
+    if (fieList.length() != 0)
+    {
+      fieList.append(" , ");//TODO need to change this delim
+    }
+    fieList.append(fileName);
+  }
+
 
   public String getUserNameHash() {
 
@@ -18,7 +38,7 @@ public class Node
     this.userNameHash = userNameHash;
   }
 
-  private String userNameHash;
+
 
   public Node(final String ip, final String port, final String username)
   {

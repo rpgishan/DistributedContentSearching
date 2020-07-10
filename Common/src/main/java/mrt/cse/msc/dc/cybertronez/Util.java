@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import org.apache.logging.log4j.LogManager;
@@ -136,22 +137,30 @@ public class Util {
         int nodeIndex = Collections.min(diffList);
         return nodeList.get(nodeIndex);
     }
-/*
-    public  List<String> selectFilesForNode(List<String> fileList, List<Node> nodeList) {
 
-        fileList.forEach(fileName -> {
-            int diff = 0;
+    public List<Node> selectFilesForNode(Set<String> fileList, List<Node> nodeList) {
+
+        for (String fileName : fileList) {
+            int currentDiff = 0;
+            int leastDiffIndex = 0;
             String fileHash = hashGenerator.getHash(fileName);
-            nodeList.forEach(node -> {
+            for (int i = 0; i < nodeList.size(); i++) {
+                int diff = hashGenerator.getDifference(fileHash.getBytes(),
+                        nodeList.get(i).getUserNameHash().getBytes());
+                if (currentDiff == 0) {
+                    currentDiff = diff;
+                    leastDiffIndex = i;
+                }
+                if (diff < currentDiff) {
+                    currentDiff = diff;
+                    leastDiffIndex = i;
+                }
+            }
+            Node npde = nodeList.get(leastDiffIndex);
+            nodeList.get(leastDiffIndex).addFileToList(fileName);
+            LOGGER.info("Selected file list: {}", () -> npde.getFieList());
+        } return nodeList;
+    }
 
 
-            });
-        });
-            Node nodeToSendFile = util.selectNode(fileName, connectedNodes);
-            final byte[] buf = util.generateMessage(Messages.JOIN.getValue(), currentNode.getIp(),
-                    Integer.toString(currentNode.getPort()), Integer.toString(fileNames.size()), fileName).getBytes();
-            String response = util.sendMessage(buf, nodeToSendFile.getIp(), socket, nodeToSendFile.getPort());
-            logger.info("outgoingRequestToPairUp response: {}", () -> response);
-
-    }*/
 }
