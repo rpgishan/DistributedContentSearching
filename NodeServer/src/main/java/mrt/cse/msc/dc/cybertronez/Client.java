@@ -39,6 +39,8 @@ public class Client
     populateFiles();
     openSocket();
     join();
+    Thread t1 = new Thread(new HealthCheck(this));
+    t1.start();
   }
 
   private void openSocket()
@@ -548,5 +550,15 @@ public class Client
       final Client client = new Client(ip, port, username);
 
     }
+  }
+
+  List<Node> getConnectedNodes() {
+
+    return connectedNodes;
+  }
+
+  Node getCurrentNode() {
+
+    return currentNode;
   }
 }
