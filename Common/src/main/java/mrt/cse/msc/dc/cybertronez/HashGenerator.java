@@ -5,58 +5,49 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
-public class HashGenerator
-{
-  public String getHash(final String word)
-  {
-    final String hash = "";
-    try
-    {
-      final MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      final byte[] encodedHash = digest.digest(word.getBytes(StandardCharsets.UTF_8));
+public class HashGenerator {
 
-      return bytesToHex(encodedHash);
-    }
-    catch (NoSuchAlgorithmException e)
-    {
-      e.printStackTrace();
-    }
+    public String getHash(final String word) {
 
-    return hash;
-  }
+        final String hash = "";
+        try {
+            final MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            final byte[] encodedHash = digest.digest(word.getBytes(StandardCharsets.UTF_8));
 
-  public  String bytesToHex(final byte[] hashes)
-  {
-    final StringBuilder hexString = new StringBuilder();
+            return bytesToHex(encodedHash);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
 
-    for (final byte hash : hashes)
-    {
-      final String hex = Integer.toHexString(0xff & hash);
-
-      if (hex.length() == 1)
-      {
-        hexString.append('0');
-      }
-
-      hexString.append(hex);
+        return hash;
     }
 
-    return hexString.toString();
-  }
+    public String bytesToHex(final byte[] hashes) {
 
-    public  int getDifference(byte[] fileName, byte[] nodeId) {
+        final StringBuilder hexString = new StringBuilder();
+
+        for (final byte hash : hashes) {
+            final String hex = Integer.toHexString(0xff & hash);
+
+            if (hex.length() == 1) {
+                hexString.append('0');
+            }
+
+            hexString.append(hex);
+        }
+
+        return hexString.toString();
+    }
+
+    public int getDifference(byte[] fileName, byte[] nodeId) {
 
         int diff = 0;
         ArrayList<Integer> diffList = new ArrayList<>();
-        for (int i = 0; i < 64; i++)
-        {
-          diff = diff + Math.abs(fileName[i] - nodeId[i]);
+        for (int i = 0; i < 64; i++) {
+            diff = diff + Math.abs(fileName[i] - nodeId[i]);
         }
 
         return diff;
     }
-
-
-
 
 }

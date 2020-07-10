@@ -8,9 +8,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -22,6 +20,7 @@ public class Util {
     private static final Logger LOGGER = LogManager.getLogger(Util.class);
     public static final int BUFFER_SIZE = 10000;
     private HashGenerator hashGenerator = new HashGenerator();
+
     public String sendMessage(byte[] message, String hostName, DatagramSocket socket, int port) {
 
         InetAddress address = null;
@@ -43,7 +42,7 @@ public class Util {
                 socket.send(packet);
 
                 LOGGER.info("sendSocketMessage sent to {}:{} from {}:{}:{}", () -> hostName, () -> port,
-                    socket::getLocalAddress, socket::getPort, socket::getLocalPort);
+                        socket::getLocalAddress, socket::getPort, socket::getLocalPort);
                 LOGGER.info("sendSocketMessage sent: {}", () -> new String(message));
 
                 packet = new DatagramPacket(responseBuffer, responseBuffer.length);
@@ -72,7 +71,7 @@ public class Util {
         final String length = String.format("%04d", sb.length());
         sb.replace(0, 4, length);
 
-    LOGGER.debug("generateMessage: {}", sb::toString);
+        LOGGER.debug("generateMessage: {}", sb::toString);
 
         return sb.toString();
     }
@@ -90,16 +89,16 @@ public class Util {
             connectedNodes.add(new Node(ip, port));
         }
 
-    StringBuilder stringBuilder = new StringBuilder();
-    connectedNodes.forEach(s -> stringBuilder.append(s).append(" "));
-    LOGGER.debug("joinBS connectedNodes: {}", stringBuilder::toString);
-    LOGGER.debug("JoinBS Successful");
+        StringBuilder stringBuilder = new StringBuilder();
+        connectedNodes.forEach(s -> stringBuilder.append(s).append(" "));
+        LOGGER.debug("joinBS connectedNodes: {}", stringBuilder::toString);
+        LOGGER.debug("JoinBS Successful");
 
         return response;
 
     }
 
-    public  List<String> extractFileNames(StringTokenizer st) {
+    public List<String> extractFileNames(StringTokenizer st) {
 
         final int noOfFiles = Integer.parseInt(st.nextToken());
         final List<String> fileNames = new ArrayList<>(noOfFiles);
@@ -125,7 +124,7 @@ public class Util {
         return fileNames;
     }
 
-    public  Node selectNode(String fileName, List<Node> nodeList) {
+    public Node selectNode(String fileName, List<Node> nodeList) {
 
         String fileHash = hashGenerator.getHash(fileName);
         List<Integer> diffList = new ArrayList<>();
@@ -159,8 +158,8 @@ public class Util {
             Node npde = nodeList.get(leastDiffIndex);
             nodeList.get(leastDiffIndex).addFileToList(fileName);
             LOGGER.info("Selected file list: {}", () -> npde.getFieList());
-        } return nodeList;
+        }
+        return nodeList;
     }
-
 
 }
