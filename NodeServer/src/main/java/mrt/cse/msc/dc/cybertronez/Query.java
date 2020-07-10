@@ -1,32 +1,32 @@
 package mrt.cse.msc.dc.cybertronez;
 
-public class Query
-{
-  private String query;
-  private Node initiatedNode;
+public class Query {
 
-  public Query(final String query, final Node initiatedNode)
-  {
-    this.query = query;
-    this.initiatedNode = initiatedNode;
-  }
+    private String query;
+    private Node initiatedNode;
 
-  public String getQuery()
-  {
-    return query;
-  }
+    public Query(final String query, final Node initiatedNode) {
 
-  public Node getInitiatedNode()
-  {
-    return initiatedNode;
-  }
+        this.query = query;
+        this.initiatedNode = initiatedNode;
+    }
 
-  @Override
-  public String toString()
-  {
-    return "Query{" +
-        "query='" + query + '\'' +
-        ", initiatedNode=" + initiatedNode +
-        '}';
-  }
+    public String getQuery() {
+
+        return query;
+    }
+
+    public Node getInitiatedNode() {
+
+        return initiatedNode;
+    }
+
+    @Override
+    public String toString() {
+
+        return "Query{" +
+                "query='" + query + '\'' +
+                ", initiatedNode=" + initiatedNode +
+                '}';
+    }
 }

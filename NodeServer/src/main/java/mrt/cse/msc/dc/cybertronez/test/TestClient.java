@@ -11,24 +11,24 @@ import mrt.cse.msc.dc.cybertronez.FileNamesAndQueries;
 import mrt.cse.msc.dc.cybertronez.Messages;
 import mrt.cse.msc.dc.cybertronez.Util;
 
-public class TestClient
-{
-  public static void main(final String[] args) throws IOException
-  {
-    Util util = new Util();
-    final DatagramSocket socket;
-    final InetAddress address;
-    DatagramPacket packet;
-    String received;
+public class TestClient {
 
-    byte[] buf;
-    byte[] resbuf = new byte[65000];
-    final Random r = new Random();
+    public static void main(final String[] args) throws IOException {
 
-    socket = new DatagramSocket();
-    address = InetAddress.getByName("localhost");
-    final int min = 32;
-    final int max = 126;
+        Util util = new Util();
+        final DatagramSocket socket;
+        final InetAddress address;
+        DatagramPacket packet;
+        String received;
+
+        byte[] buf;
+        byte[] resbuf = new byte[65000];
+        final Random r = new Random();
+
+        socket = new DatagramSocket();
+        address = InetAddress.getByName("localhost");
+        final int min = 32;
+        final int max = 126;
 //    for (int i = 0; i < 10; i++)
 //    {
 //      final int size = r.nextInt(10);
@@ -49,31 +49,31 @@ public class TestClient
 //      System.out.println(received);
 
 //    }
-    Long start = Calendar.getInstance().getTimeInMillis();
-    int port = 8082;
-    //Search
+        Long start = Calendar.getInstance().getTimeInMillis();
+        int port = 8082;
+        //Search
 
-    buf = util.generateMessage(Messages.SER.getValue(), "localhost", Integer.toString(port), "0", "0",
-        FileNamesAndQueries.QUERIES.get(new Random().nextInt(FileNamesAndQueries.QUERIES.size()))).getBytes();
-    packet = new DatagramPacket(buf, buf.length, address, port);
-    socket.send(packet);
-    packet = new DatagramPacket(resbuf, resbuf.length);
-    socket.receive(packet);
-    received = new String(packet.getData(), 0, packet.getLength());
+        buf = util.generateMessage(Messages.SER.getValue(), "localhost", Integer.toString(port), "0", "0",
+                FileNamesAndQueries.QUERIES.get(new Random().nextInt(FileNamesAndQueries.QUERIES.size()))).getBytes();
+        packet = new DatagramPacket(buf, buf.length, address, port);
+        socket.send(packet);
+        packet = new DatagramPacket(resbuf, resbuf.length);
+        socket.receive(packet);
+        received = new String(packet.getData(), 0, packet.getLength());
 
-    Long end = Calendar.getInstance().getTimeInMillis();
-    System.out.println(received);
-    System.out.println("Time diff: " + (end - start));
-    System.out.println();
+        Long end = Calendar.getInstance().getTimeInMillis();
+        System.out.println(received);
+        System.out.println("Time diff: " + (end - start));
+        System.out.println();
 
-    buf = util.generateMessage("DETAILS").getBytes();
-    packet = new DatagramPacket(buf, buf.length, address, port);
-    socket.send(packet);
-    packet = new DatagramPacket(resbuf, resbuf.length);
-    socket.receive(packet);
-    received = new String(packet.getData(), 0, packet.getLength());
-    System.out.println(received);
-    socket.close();
+        buf = util.generateMessage("DETAILS").getBytes();
+        packet = new DatagramPacket(buf, buf.length, address, port);
+        socket.send(packet);
+        packet = new DatagramPacket(resbuf, resbuf.length);
+        socket.receive(packet);
+        received = new String(packet.getData(), 0, packet.getLength());
+        System.out.println(received);
+        socket.close();
 
-  }
+    }
 }
