@@ -7,7 +7,7 @@
     <Appenders>
 
         <Console name="Console">
-            <PatternLayout pattern="${layout}" />
+            <PatternLayout pattern="${layout}"/>
         </Console>
 
         <File name="LogFile" fileName="logs/client.log" append="true">
@@ -17,14 +17,14 @@
 
     <Loggers>
 
-        <Logger name="mrt.cse.msc.dc.cybertronez" level="info" additivity="false" >
-            <AppenderRef ref="Console" />
-            <AppenderRef ref="LogFile" />
+        <Logger name="mrt.cse.msc.dc.cybertronez" level="info" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="LogFile"/>
         </Logger>
 
         <Root level="info">
-            <AppenderRef ref="Console" />
-            <AppenderRef ref="LogFile" />
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="LogFile"/>
         </Root>
 
     </Loggers>

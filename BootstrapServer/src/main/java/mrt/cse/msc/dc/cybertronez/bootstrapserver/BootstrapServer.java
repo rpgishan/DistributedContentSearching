@@ -1,5 +1,11 @@
 package mrt.cse.msc.dc.cybertronez.bootstrapserver;
 
+import mrt.cse.msc.dc.cybertronez.Messages;
+import mrt.cse.msc.dc.cybertronez.Node;
+import mrt.cse.msc.dc.cybertronez.Util;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -8,31 +14,24 @@ import java.util.List;
 import java.util.Random;
 import java.util.StringTokenizer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import mrt.cse.msc.dc.cybertronez.Messages;
-import mrt.cse.msc.dc.cybertronez.Node;
-import mrt.cse.msc.dc.cybertronez.Util;
-
 public class BootstrapServer {
 
     private static Logger logger;
     private Util util = new Util();
 
-  public static void main(final String[] args)
-  {
-    new BootstrapServer().startBootstrapServer();
-  }
+    public static void main(final String[] args) {
 
-  private void startBootstrapServer()
-  {
-    final Node bsNode = new Node("localhost", 55555);
-    logger = LogManager.getLogger(BootstrapServer.class.getName() + " - " + bsNode.toString());
-    String s;
-    final List<Node> nodes = new ArrayList<>();
+        new BootstrapServer().startBootstrapServer();
+    }
 
-        try (DatagramSocket sock = new DatagramSocket(bsNode.getPort())) {
+    private void startBootstrapServer() {
+
+        final Node bsNode = new Node("localhost", 55555);
+        logger = LogManager.getLogger(BootstrapServer.class.getName() + " - " + bsNode.toString());
+        String s;
+        final List<Node> nodes = new ArrayList<>();
+
+        try (final DatagramSocket sock = new DatagramSocket(bsNode.getPort())) {
             logger.info("Bootstrap Server created at {}. Waiting for incoming data...", bsNode::getPort);
 
             while (true) {
@@ -44,7 +43,7 @@ public class BootstrapServer {
                 s = new String(data, 0, incoming.getLength());
 
                 //echo the details of incoming data - client ip : client port - client message
-                String finalS = s;
+                final String finalS = s;
                 logger.info("{} : {} - {}", incoming.getAddress()::getHostAddress, incoming::getPort, () -> finalS);
 
                 final StringTokenizer st = new StringTokenizer(s, " ");
@@ -56,7 +55,7 @@ public class BootstrapServer {
                 logger.info("Command: {}", () -> command);
 
                 if (command.equals(Messages.REG.getValue())) {
-                    StringBuilder replyBuilder = new StringBuilder(Messages.REGOK.getValue());
+                    final StringBuilder replyBuilder = new StringBuilder(Messages.REGOK.getValue());
 
                     final String ip = st.nextToken();
                     final int port = Integer.parseInt(st.nextToken());
@@ -92,7 +91,7 @@ public class BootstrapServer {
                                     random_2 = r.nextInt(High - Low) + Low;
                                 }
 
-                                int finalRandom_ = random_2;
+                                final int finalRandom_ = random_2;
                                 logger.info("{} {}", () -> random_1, () -> finalRandom_);
 
                                 replyBuilder.append(" 2 ").append(nodes.get(random_1).getIp()).append(" ")

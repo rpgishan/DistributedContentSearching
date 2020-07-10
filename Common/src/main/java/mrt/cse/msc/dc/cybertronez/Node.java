@@ -15,7 +15,7 @@ public class Node {
         return fieList;
     }
 
-    public void addFileToList(String fileName) {
+    public void addFileToList(final String fileName) {
 
         if (fieList.length() != 0) {
             fieList.append(" , ");//TODO need to change this delim
@@ -28,7 +28,7 @@ public class Node {
         return userNameHash;
     }
 
-    public void setUserNameHash(String userNameHash) {
+    public void setUserNameHash(final String userNameHash) {
 
         this.userNameHash = userNameHash;
     }

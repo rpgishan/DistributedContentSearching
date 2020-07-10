@@ -1,5 +1,8 @@
 package mrt.cse.msc.dc.cybertronez;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -12,16 +15,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 public class Util {
 
     private static final Logger LOGGER = LogManager.getLogger(Util.class);
     public static final int BUFFER_SIZE = 10000;
     public static final int DEFAULT_TIMEOUT = 30000;
     private HashGenerator hashGenerator = new HashGenerator();
-    public String sendMessage(byte[] message, String hostName, DatagramSocket socket, int port, int timeout) {
+
+    public String sendMessage(final byte[] message, final String hostName, final DatagramSocket socket, final int port, final int timeout) {
 
         InetAddress address = null;
         String received = "";
@@ -35,20 +36,20 @@ public class Util {
             LOGGER.error("Error while setting socket timeout ", e);
         }
 
-        byte[] responseBuffer = new byte[BUFFER_SIZE];
+        final byte[] responseBuffer = new byte[BUFFER_SIZE];
         if (address != null) {
             DatagramPacket packet = new DatagramPacket(message, message.length, address, port);
             try {
                 socket.send(packet);
 
                 LOGGER.debug("sendSocketMessage sent to {}:{} from {}:{}:{}", () -> hostName, () -> port,
-                    socket::getLocalAddress, socket::getPort, socket::getLocalPort);
+                        socket::getLocalAddress, socket::getPort, socket::getLocalPort);
                 LOGGER.debug("sendSocketMessage sent: {}", () -> new String(message));
 
                 packet = new DatagramPacket(responseBuffer, responseBuffer.length);
                 socket.receive(packet);
                 received = new String(packet.getData(), 0, packet.getLength());
-                String finalReceived = received;
+                final String finalReceived = received;
                 LOGGER.debug("sendSocketMessage received: {}", () -> finalReceived);
             } catch (IOException e) {
                 LOGGER.error("Error while sending packet", e);
@@ -76,35 +77,32 @@ public class Util {
         return sb.toString();
     }
 
-    boolean isSocketAvailable(Node node)
-    {
-        try (DatagramSocket socket = new DatagramSocket())
-        {
-            byte[] pingMsg = generateMessage(Messages.PING.getValue()).getBytes();
-            String response = sendMessage(pingMsg, node.getIp(), socket, node.getPort(), 5000);
+    boolean isSocketAvailable(final Node node) {
+
+        try (final DatagramSocket socket = new DatagramSocket()) {
+            final byte[] pingMsg = generateMessage(Messages.PING.getValue()).getBytes();
+            final String response = sendMessage(pingMsg, node.getIp(), socket, node.getPort(), 5000);
             return response.contains(Messages.PING_OK.getValue());
-        }
-        catch (SocketException e)
-        {
+        } catch (SocketException e) {
             LOGGER.error("SocketException", e);
         }
         return false;
     }
 
-    public String processRegisterResponse(String response, List<Node> connectedNodes) {
+    public String processRegisterResponse(final String response, final List<Node> connectedNodes) {
 
-        StringTokenizer st = new StringTokenizer(response, " ");
-        String length = st.nextToken();
-        String command = st.nextToken();
-        int noOfNodes = Integer.parseInt(st.nextToken());
+        final StringTokenizer st = new StringTokenizer(response, " ");
+        final String length = st.nextToken();
+        final String command = st.nextToken();
+        final int noOfNodes = Integer.parseInt(st.nextToken());
 
         for (int i = 0; i < noOfNodes; i++) {
-            String ip = st.nextToken();
-            String port = st.nextToken();
+            final String ip = st.nextToken();
+            final String port = st.nextToken();
             connectedNodes.add(new Node(ip, port));
         }
 
-        StringBuilder stringBuilder = new StringBuilder();
+        final StringBuilder stringBuilder = new StringBuilder();
         connectedNodes.forEach(s -> stringBuilder.append(s).append(" "));
         LOGGER.debug("joinBS connectedNodes: {}", stringBuilder::toString);
         LOGGER.debug("JoinBS Successful");
@@ -113,42 +111,41 @@ public class Util {
 
     }
 
-    public List<String> extractFileNames(StringTokenizer st)
-    {
+    public List<String> extractFileNames(final StringTokenizer st) {
+
         final int noOfFiles = Integer.parseInt(st.nextToken());
         final List<String> fileNames = new ArrayList<>(noOfFiles);
-        String fileNameSeg = st.nextToken();
-        StringTokenizer fileNameTokenizer = new StringTokenizer(fileNameSeg, ",");
+        final String fileNameSeg = st.nextToken();
+        final StringTokenizer fileNameTokenizer = new StringTokenizer(fileNameSeg, ",");
 
-        for (int i = 0; i < noOfFiles; i++)
-        {
+        for (int i = 0; i < noOfFiles; i++) {
             fileNames.add(fileNameTokenizer.nextToken());
         }
 
         return fileNames;
     }
 
-    public Node selectNode(String fileName, List<Node> nodeList) {
+    public Node selectNode(final String fileName, final List<Node> nodeList) {
 
-        String fileHash = hashGenerator.getHash(fileName);
-        List<Integer> diffList = new ArrayList<>();
+        final String fileHash = hashGenerator.getHash(fileName);
+        final List<Integer> diffList = new ArrayList<>();
         for (int i = 0; i < nodeList.size(); i++) {
-            Node currentNode = nodeList.get(i);
-            int diff = hashGenerator.getDifference(fileHash.getBytes(), currentNode.getUserNameHash().getBytes());
+            final Node currentNode = nodeList.get(i);
+            final int diff = hashGenerator.getDifference(fileHash.getBytes(), currentNode.getUserNameHash().getBytes());
             diffList.add(diff);
         }
-        int nodeIndex = Collections.min(diffList);
+        final int nodeIndex = Collections.min(diffList);
         return nodeList.get(nodeIndex);
     }
 
-    public List<Node> selectFilesForNode(Set<String> fileList, List<Node> nodeList) {
+    public List<Node> selectFilesForNode(final Set<String> fileList, final List<Node> nodeList) {
 
-        for (String fileName : fileList) {
+        for (final String fileName : fileList) {
             int currentDiff = 0;
             int leastDiffIndex = 0;
-            String fileHash = hashGenerator.getHash(fileName);
+            final String fileHash = hashGenerator.getHash(fileName);
             for (int i = 0; i < nodeList.size(); i++) {
-                int diff = hashGenerator.getDifference(fileHash.getBytes(),
+                final int diff = hashGenerator.getDifference(fileHash.getBytes(),
                         nodeList.get(i).getUserNameHash().getBytes());
                 if (currentDiff == 0) {
                     currentDiff = diff;
@@ -159,7 +156,7 @@ public class Util {
                     leastDiffIndex = i;
                 }
             }
-            Node npde = nodeList.get(leastDiffIndex);
+            final Node npde = nodeList.get(leastDiffIndex);
             nodeList.get(leastDiffIndex).addFileToList(fileName);
             LOGGER.info("Selected file list: {}", () -> npde.getFieList());
         }
