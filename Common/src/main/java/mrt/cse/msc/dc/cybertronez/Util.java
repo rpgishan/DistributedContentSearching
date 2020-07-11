@@ -20,6 +20,7 @@ public class Util {
     private static final Logger LOGGER = LogManager.getLogger(Util.class);
     public static final int BUFFER_SIZE = 10000;
     public static final int DEFAULT_TIMEOUT = 30000;
+    public static final char FILE_NAME_SEPARATOR = ',';
     private HashGenerator hashGenerator = new HashGenerator();
 
     public String sendMessage(final byte[] message, final String hostName, final DatagramSocket socket, final int port, final int timeout) {
@@ -115,11 +116,13 @@ public class Util {
 
         final int noOfFiles = Integer.parseInt(st.nextToken());
         final List<String> fileNames = new ArrayList<>(noOfFiles);
-        final String fileNameSeg = st.nextToken();
-        final StringTokenizer fileNameTokenizer = new StringTokenizer(fileNameSeg, ",");
+        if (noOfFiles != 0) {
+            final String fileNameSeg = st.nextToken();
+            final StringTokenizer fileNameTokenizer = new StringTokenizer(fileNameSeg, Character.toString(FILE_NAME_SEPARATOR));
 
-        for (int i = 0; i < noOfFiles; i++) {
-            fileNames.add(fileNameTokenizer.nextToken());
+            for (int i = 0; i < noOfFiles; i++) {
+                fileNames.add(fileNameTokenizer.nextToken());
+            }
         }
 
         return fileNames;
@@ -156,9 +159,9 @@ public class Util {
                     leastDiffIndex = i;
                 }
             }
-            final Node npde = nodeList.get(leastDiffIndex);
+            final Node node = nodeList.get(leastDiffIndex);
             nodeList.get(leastDiffIndex).addFileToList(fileName);
-            LOGGER.info("Selected file list: {}", () -> npde.getFieList());
+            LOGGER.info("Selected file list: {}", node::getFieList);
         }
         return nodeList;
     }

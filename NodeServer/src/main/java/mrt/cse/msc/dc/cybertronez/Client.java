@@ -168,13 +168,11 @@ public class Client {
         });
 
         sb.append("\n*****FILE_NAMES*****").append("\n");
-        fileNames.forEach(s -> {
-            sb.append(s).append(" , ");
-        });
+        fileNames.forEach(s -> sb.append(s).append(" , "));
+
         sb.append("\n*****CONNECTED_NODES*****").append("\n");
-        connectedNodes.forEach(s -> {
-            sb.append(s).append(" , ");
-        });
+        connectedNodes.forEach(s -> sb.append(s).append(" , "));
+
         return util.generateMessage(Messages.DETAILS.getValue(), sb.toString());
     }
 
@@ -225,15 +223,15 @@ public class Client {
 
         hops++;
 
-        final StringBuilder fileNameBuilder = new StringBuilder();
+        final StringBuilder queryBuilder = new StringBuilder();
         while (st.hasMoreElements()) {
-            if (fileNameBuilder.length() != 0) {
-                fileNameBuilder.append("_");
+            if (queryBuilder.length() != 0) {
+                queryBuilder.append("_");
             }
-            fileNameBuilder.append(st.nextToken());
+            queryBuilder.append(st.nextToken());
         }
 
-        return search(new Query(fileNameBuilder.toString(), new Node(ip, port)), hops, propagatedNodes);
+        return search(new Query(queryBuilder.toString(), new Node(ip, port)), hops, propagatedNodes);
     }
 
     private String search(final Query query, final int hops, final Set<Node> propagatedNodes) {
@@ -438,11 +436,11 @@ public class Client {
         //call this when using hashes
         // nodes.forEach(this::forwardFileNames);
         //assign file list for each node
-      /*if (!connectedNodes.isEmpty()) {
-          util.selectFilesForNode(fileNames, connectedNodes);
-          connectedNodes.forEach(this::forwardFileNames);
-      }*/
-        connectedNodes.forEach(this::outgoingRequestToPairUp);
+        if (!connectedNodes.isEmpty()) {
+            util.selectFilesForNode(fileNames, connectedNodes);
+            connectedNodes.forEach(this::forwardJoinRequestWithFileNames);
+        }
+//        connectedNodes.forEach(this::outgoingRequestToPairUp);
     }
 
     private void outgoingRequestToPairUp(final Node node) {
@@ -450,16 +448,11 @@ public class Client {
 //    need to send hash of file names
 
         try (final DatagramSocket socket = new DatagramSocket()) {
-            final StringBuilder files = new StringBuilder();
-            fileNames.forEach(file -> {
-                if (files.length() != 0) {
-                    files.append(",");//TODO need to change this delim
-                }
-                files.append(file);
-            });
+            node.addFileToList(fileNames);
 
             final byte[] buf = util.generateMessage(Messages.JOIN.getValue(), currentNode.getIp(),
-                    Integer.toString(currentNode.getPort()), Integer.toString(fileNames.size()), files.toString()).getBytes();
+                    Integer.toString(currentNode.getPort()), Integer.toString(node.getNoOfFiles()),
+                    node.getFieList()).getBytes();
 
             final String response = util.sendMessage(buf, node.getIp(), socket, node.getPort(), Util.DEFAULT_TIMEOUT);
 
@@ -469,19 +462,19 @@ public class Client {
         }
     }
 
-    private void forwardFileNames(final Node node) {
+    private void forwardJoinRequestWithFileNames(final Node node) {
 //    send pair up request to other nodes
 //    need to send hash of file names
         try (final DatagramSocket socket = new DatagramSocket()) {
 
-            final int fileSize = node.getFieList().toString().split(",").length;
+            final int fileSize = node.getNoOfFiles();
             final byte[] buf = util.generateMessage(Messages.JOIN.getValue(), currentNode.getIp(),
                     Integer.toString(currentNode.getPort()), Integer.toString(fileSize),
-                    node.getFieList().toString()).getBytes();
+                    node.getFieList()).getBytes();
 
             final String response = util.sendMessage(buf, node.getIp(), socket, node.getPort(), Util.DEFAULT_TIMEOUT);
 
-            logger.info("outgoingRequestToPairUp response: {}", () -> response);
+            logger.info("forwardJoinRequestWithFileNames response: {}", () -> response);
 
         } catch (SocketException e) {
             logger.error("SocketException", e);

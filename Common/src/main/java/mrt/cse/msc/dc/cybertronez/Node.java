@@ -1,5 +1,6 @@
 package mrt.cse.msc.dc.cybertronez;
 
+import java.util.Collection;
 import java.util.Objects;
 
 public class Node {
@@ -9,28 +10,35 @@ public class Node {
     private String username;
     private String userNameHash;
     private StringBuilder fieList = new StringBuilder();
+    private int noOfFiles;
 
-    public StringBuilder getFieList() {
+    public String getFieList() {
 
-        return fieList;
+        return fieList.toString();
+    }
+
+    public int getNoOfFiles() {
+
+        return noOfFiles;
     }
 
     public void addFileToList(final String fileName) {
 
         if (fieList.length() != 0) {
-            fieList.append(" , ");//TODO need to change this delim
+            fieList.append(Util.FILE_NAME_SEPARATOR);
         }
         fieList.append(fileName);
+        noOfFiles++;
+    }
+
+    public void addFileToList(final Collection<String> fileNames) {
+
+        fileNames.forEach(this::addFileToList);
     }
 
     public String getUserNameHash() {
 
         return userNameHash;
-    }
-
-    public void setUserNameHash(final String userNameHash) {
-
-        this.userNameHash = userNameHash;
     }
 
     public Node(final String ip, final String port, final String username) {
@@ -53,7 +61,7 @@ public class Node {
         this.ip = ip;
         this.port = port;
         this.username = username;
-        this.userNameHash = new HashGenerator().getHash(username);
+        this.userNameHash = new HashGenerator().getHashString(username);
     }
 
     public String getIp() {
