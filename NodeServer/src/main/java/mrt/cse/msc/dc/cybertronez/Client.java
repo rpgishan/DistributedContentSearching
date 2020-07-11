@@ -379,7 +379,7 @@ public class Client {
     }
 
     private Set<Node> getNodesToBeSearched(String query) {
-
+//TODO need to implement
         Map<Integer, List<Node>> orderedNodes = new HashMap<>();
         Set<Node> orderedNodesSet = new LinkedHashSet<>();
 //        connectedNodes.forEach(node -> {
@@ -479,7 +479,7 @@ public class Client {
         //assign file list for each node
 //        if (!connectedNodes.isEmpty()) {
 //            util.selectFilesForNode(fileNames, connectedNodes);
-//            connectedNodes.forEach(this::forwardJoinRequestWithFileNames);
+//            connectedNodes.forEach(this::forwardJoinRequestWithFileNames);//TODO need to fix errors
 //        }
         connectedNodes.forEach(this::outgoingRequestToPairUp);
     }
