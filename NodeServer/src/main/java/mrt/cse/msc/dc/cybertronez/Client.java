@@ -124,6 +124,8 @@ public class Client {
             return processJoinRequest(st);
         } else if (command.equals(Messages.LEAVE.getValue())) {
             return processLeaveRequest(st);
+        } else if (command.equals(Messages.SEND_LEAVE.getValue())) {
+            return initiateLeaveRequest();
         } else if (command.equals(Messages.SER.getValue())) {
             return processSearchRequest(st);
         } else if (command.equals(Messages.DETAILS.getValue())) {
@@ -158,11 +160,13 @@ public class Client {
 
         final StringBuilder sb = new StringBuilder();
         sb.append("Node - ").append(currentNode.toString());
+
         sb.append("\n*****ROUTING_TABLE*****");
         routingTable.forEach((s, nodes) -> {
             sb.append("\n").append(s).append(" - ");
             nodes.forEach(node -> sb.append(node).append(" , "));
         });
+
         sb.append("\n*****FILE_NAMES*****").append("\n");
         fileNames.forEach(s -> {
             sb.append(s).append(" , ");
@@ -180,12 +184,29 @@ public class Client {
         final String port = st.nextToken();
         final Node node = new Node(ip, port);
         final Optional<Node> first = connectedNodes.stream().filter(node::equals).findFirst();
-        final boolean response = first.isPresent() ? connectedNodes.remove(first.get()) : false;
+        final boolean response = first.isPresent() && connectedNodes.remove(first.get());
 
         logger.info("response: {}", () -> response);
 
         final Messages code = response ? Messages.CODE0 : Messages.CODE9999;
         return util.generateMessage(Messages.LEAVEOK.getValue(), code.getValue());
+    }
+
+    private String initiateLeaveRequest() {
+
+        StringBuilder responseBuilder = new StringBuilder();
+        try (DatagramSocket socket = new DatagramSocket()) {
+            connectedNodes.forEach(node -> {
+                byte[] msg = util.generateMessage(Messages.LEAVE.getValue(), currentNode.getIp(),
+                        Integer.toString(currentNode.getPort())).getBytes();
+                String response = util.sendMessage(msg, node.getIp(), socket, node.getPort(), Util.DEFAULT_TIMEOUT);
+                logger.info("response: {}", () -> response);
+                responseBuilder.append(response).append(", ");
+            });
+        } catch (SocketException e) {
+            logger.error("SocketException", e);
+        }
+        return responseBuilder.toString();
     }
 
     private String processSearchRequest(final StringTokenizer st) {
@@ -317,7 +338,6 @@ public class Client {
 
                         logger.info("Got search response error of \"{}\" - \"{}\" for \"{}\" from {}. Current hops: {}", () -> code,
                                 () -> error, () -> query, node::toString, () -> newHops);
-                        continue;
                     }
                 }
             }
