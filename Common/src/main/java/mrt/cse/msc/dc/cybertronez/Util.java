@@ -114,17 +114,18 @@ public class Util {
 
     public List<String> extractFileNames(final StringTokenizer st) {
 
-        final int noOfFiles = Integer.parseInt(st.nextToken());
-        final List<String> fileNames = new ArrayList<>(noOfFiles);
-        if (noOfFiles != 0) {
-            final String fileNameSeg = st.nextToken();
-            final StringTokenizer fileNameTokenizer = new StringTokenizer(fileNameSeg, Character.toString(FILE_NAME_SEPARATOR));
+        final List<String> fileNames = new ArrayList<>();
+        if (st.countTokens() >= 1) {
+            final int noOfFiles = Integer.parseInt(st.nextToken());
+            if (noOfFiles != 0 && st.hasMoreTokens()) {
+                final String fileNameSeg = st.nextToken();
+                final StringTokenizer fileNameTokenizer = new StringTokenizer(fileNameSeg, Character.toString(FILE_NAME_SEPARATOR));
 
-            for (int i = 0; i < noOfFiles; i++) {
-                fileNames.add(fileNameTokenizer.nextToken());
+                for (int i = 0; i < noOfFiles && fileNameTokenizer.hasMoreTokens(); i++) {
+                    fileNames.add(fileNameTokenizer.nextToken());
+                }
             }
         }
-
         return fileNames;
     }
 

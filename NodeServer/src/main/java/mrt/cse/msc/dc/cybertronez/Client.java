@@ -11,6 +11,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -112,29 +113,41 @@ public class Client {
         }).start();
     }
 
-    private String processSocketMessage(final String message) {
+    private String processSocketMessage(String message) {
 
-        logger.info("processSocketMessage message: {}", () -> message);
+        String finalMessage = message;
+        logger.info("processSocketMessage message: {}", () -> finalMessage);
+
+        if(message.endsWith("\n")){
+            message = message.substring(0,message.length()-1);
+        }
 
         final StringTokenizer st = new StringTokenizer(message, " ");
-        final String length = st.nextToken();
-        final String command = st.nextToken();
 
-        if (command.equals(Messages.JOIN.getValue())) {
-            return processJoinRequest(st);
-        } else if (command.equals(Messages.LEAVE.getValue())) {
-            return processLeaveRequest(st);
-        } else if (command.equals(Messages.SEND_LEAVE.getValue())) {
-            return initiateLeaveRequest();
-        } else if (command.equals(Messages.SER.getValue())) {
-            return processSearchRequest(st);
-        } else if (command.equals(Messages.DETAILS.getValue())) {
-            return processDetailsRequest();
-        } else if (command.equals(Messages.PING.getValue())) {
-            return util.generateMessage(Messages.PING_OK.getValue());
-        } else {
-            return util.generateMessage(Messages.ERROR.toString());
+        if (st.countTokens() >= 2) {
+            final String length = st.nextToken();
+            final String command = st.nextToken();
+
+            String response = "";
+            if (command.equals(Messages.JOIN.getValue())) {
+                response = processJoinRequest(st);
+            } else if (command.equals(Messages.LEAVE.getValue())) {
+                response = processLeaveRequest(st);
+            } else if (command.equals(Messages.SEND_LEAVE.getValue())) {
+                response = initiateLeaveRequest();
+            } else if (command.equals(Messages.SER.getValue())) {
+                response = processSearchRequest(st);
+            } else if (command.equals(Messages.DETAILS.getValue())) {
+                response = processDetailsRequest();
+            } else if (command.equals(Messages.PING.getValue())) {
+                response = util.generateMessage(Messages.PING_OK.getValue());
+            }
+            if (!response.isEmpty()) {
+                return response + "\n";
+            }
         }
+
+        return util.generateMessage(Messages.ERROR.toString(), "Invalid parameters.\n");
     }
 
     private void populateFiles() {
@@ -178,16 +191,20 @@ public class Client {
 
     private String processLeaveRequest(final StringTokenizer st) {
 
-        final String ip = st.nextToken();
-        final String port = st.nextToken();
-        final Node node = new Node(ip, port);
-        final Optional<Node> first = connectedNodes.stream().filter(node::equals).findFirst();
-        final boolean response = first.isPresent() && connectedNodes.remove(first.get());
+        if (st.countTokens() >= 2) {
+            final String ip = st.nextToken();
+            final String port = st.nextToken();
+            final Node node = new Node(ip, port);
+            final Optional<Node> first = connectedNodes.stream().filter(node::equals).findFirst();
+            final boolean response = first.isPresent() && connectedNodes.remove(first.get());
 
-        logger.info("response: {}", () -> response);
+            logger.info("response: {}", () -> response);
 
-        final Messages code = response ? Messages.CODE0 : Messages.CODE9999;
-        return util.generateMessage(Messages.LEAVEOK.getValue(), code.getValue());
+            final Messages code = response ? Messages.CODE0 : Messages.CODE9999;
+            return util.generateMessage(Messages.LEAVEOK.getValue(), code.getValue());
+        }
+
+        return util.generateMessage(Messages.ERROR.toString());
     }
 
     private String initiateLeaveRequest() {
@@ -209,29 +226,33 @@ public class Client {
 
     private String processSearchRequest(final StringTokenizer st) {
 
-        final String ip = st.nextToken();
-        final String port = st.nextToken();
-        int hops = Integer.parseInt(st.nextToken());
+        if (st.countTokens() >= 3) {
+            final String ip = st.nextToken();
+            final String port = st.nextToken();
+            int hops = Integer.parseInt(st.nextToken());
 
-        final Set<Node> propagatedNodes = new HashSet<>();
-        for (int i = 0; i < hops; i++) {
-            final String nodeIp = st.nextToken();
-            final String nodePort = st.nextToken();
-            final Node node = new Node(nodeIp, nodePort);
-            propagatedNodes.add(node);
-        }
-
-        hops++;
-
-        final StringBuilder queryBuilder = new StringBuilder();
-        while (st.hasMoreElements()) {
-            if (queryBuilder.length() != 0) {
-                queryBuilder.append("_");
+            final Set<Node> propagatedNodes = new HashSet<>();
+            for (int i = 0; i < hops && st.hasMoreTokens(); i++) {
+                final String nodeIp = st.nextToken();
+                final String nodePort = st.nextToken();
+                final Node node = new Node(nodeIp, nodePort);
+                propagatedNodes.add(node);
             }
-            queryBuilder.append(st.nextToken());
+
+            hops++;
+
+            final StringBuilder queryBuilder = new StringBuilder();
+            while (st.hasMoreTokens()) {
+                if (queryBuilder.length() != 0) {
+                    queryBuilder.append("_");
+                }
+                queryBuilder.append(st.nextToken());
+            }
+
+            return search(new Query(queryBuilder.toString(), new Node(ip, port)), hops, propagatedNodes);
         }
 
-        return search(new Query(queryBuilder.toString(), new Node(ip, port)), hops, propagatedNodes);
+        return util.generateMessage(Messages.ERROR.toString());
     }
 
     private String search(final Query query, final int hops, final Set<Node> propagatedNodes) {
@@ -302,7 +323,7 @@ public class Client {
     private String propagateSearch(final Query query, int hops, final Set<Node> propagatedNodes) {
 
         try (final DatagramSocket socket = new DatagramSocket()) {
-            for (final Node node : connectedNodes) {
+            for (final Node node : getNodesToBeSearched()) {
                 final int finalHops = hops;
                 logger.info("Propagate search of \"{}\" to {}. Current hops: {}", () -> query, node::toString, () -> finalHops);
 
@@ -315,7 +336,12 @@ public class Client {
                 final byte[] buffer = util.generateMessage(Messages.SER.getValue(), query.getInitiatedNode().getIp(),
                         Integer.toString(query.getInitiatedNode().getPort()), Integer.toString(hops),
                         propagatedNodesString, query.getQuery()).getBytes();
-                final String response = util.sendMessage(buffer, node.getIp(), socket, node.getPort(), Util.DEFAULT_TIMEOUT);
+                String response = util.sendMessage(buffer, node.getIp(), socket, node.getPort(), Util.DEFAULT_TIMEOUT);
+
+                if(response.endsWith("\n")){
+                    response = response.substring(0,response.length()-1);
+                }
+
                 final StringTokenizer st = new StringTokenizer(response, " ");
                 final String length = st.nextToken();
                 final String command = st.nextToken();
@@ -350,6 +376,21 @@ public class Client {
 
         return util.generateMessage(Messages.SEROK.getValue(), Messages.CODE9998.getValue(), Messages.NOT_FOUND.getValue(),
                 Integer.toString(hops), propagatedNodesString);
+    }
+
+    private Set<Node> getNodesToBeSearched(String query) {
+
+        Map<Integer, List<Node>> orderedNodes = new HashMap<>();
+        Set<Node> orderedNodesSet = new LinkedHashSet<>();
+//        connectedNodes.forEach(node -> {
+//            byte[]
+//        });
+        return orderedNodesSet;
+    }
+
+    private List<Node> getNodesToBeSearched() {
+
+        return connectedNodes;
     }
 
     private String convertPropagatedNodesToString(final Set<Node> nodeCollection) {
@@ -436,11 +477,11 @@ public class Client {
         //call this when using hashes
         // nodes.forEach(this::forwardFileNames);
         //assign file list for each node
-        if (!connectedNodes.isEmpty()) {
-            util.selectFilesForNode(fileNames, connectedNodes);
-            connectedNodes.forEach(this::forwardJoinRequestWithFileNames);
-        }
-//        connectedNodes.forEach(this::outgoingRequestToPairUp);
+//        if (!connectedNodes.isEmpty()) {
+//            util.selectFilesForNode(fileNames, connectedNodes);
+//            connectedNodes.forEach(this::forwardJoinRequestWithFileNames);
+//        }
+        connectedNodes.forEach(this::outgoingRequestToPairUp);
     }
 
     private void outgoingRequestToPairUp(final Node node) {
@@ -483,15 +524,19 @@ public class Client {
 
     private String processJoinRequest(final StringTokenizer st) {
 
-        final String ip = st.nextToken();
-        final String port = st.nextToken();
-        final List<String> fileNames = util.extractFileNames(st);
-        final boolean response = incomingRequestToPairUp(ip, port, fileNames);
+        if (st.countTokens() >= 2) {
+            final String ip = st.nextToken();
+            final String port = st.nextToken();
+            final List<String> fileNames = util.extractFileNames(st);
+            final boolean response = incomingRequestToPairUp(ip, port, fileNames);
 
-        logger.info("response: {}", () -> response);
+            logger.info("response: {}", () -> response);
 
-        final Messages code = response ? Messages.CODE0 : Messages.CODE9999;
-        return util.generateMessage(Messages.JOINOK.getValue(), code.getValue());
+            final Messages code = response ? Messages.CODE0 : Messages.CODE9999;
+            return util.generateMessage(Messages.JOINOK.getValue(), code.getValue());
+        }
+
+        return util.generateMessage(Messages.ERROR.toString());
     }
 
     List<Node> getConnectedNodes() {
