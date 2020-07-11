@@ -16,14 +16,23 @@ public class TestClient {
         final DatagramSocket socket;
         final InetAddress address;
         DatagramPacket packet;
-        final String received;
+        String received;
 
-        final byte[] buf;
+        byte[] buf;
         final byte[] resbuf = new byte[65000];
 
         socket = new DatagramSocket();
         address = InetAddress.getByName("localhost");
         final int port = 8082;
+
+        buf = util.generateMessage(Messages.PING.getValue()).getBytes();
+        packet = new DatagramPacket(buf, buf.length, address, port);
+        socket.send(packet);
+        packet = new DatagramPacket(resbuf, resbuf.length);
+        socket.receive(packet);
+        received = new String(packet.getData(), 0, packet.getLength());
+        System.out.println(received);
+        System.out.println();
 
         buf = util.generateMessage(Messages.DETAILS.getValue()).getBytes();
         packet = new DatagramPacket(buf, buf.length, address, port);
