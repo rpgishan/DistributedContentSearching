@@ -6,28 +6,30 @@ import org.apache.logging.log4j.Logger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 
 public class HashGenerator {
 
     private static final Logger LOGGER = LogManager.getLogger(HashGenerator.class);
 
-    public String getHash(final String word) {
+    public byte[] getHash(final String word) {
 
-        final String hash = "";
         try {
             final MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            final byte[] encodedHash = digest.digest(word.getBytes(StandardCharsets.UTF_8));
+            return digest.digest(word.getBytes(StandardCharsets.UTF_8));
 
-            return bytesToHex(encodedHash);
         } catch (NoSuchAlgorithmException e) {
             LOGGER.error("NoSuchAlgorithmException", e);
         }
 
-        return hash;
+        return new byte[64];
     }
 
-    public String bytesToHex(final byte[] hashes) {
+    public String getHashString(final String word) {
+
+        return bytesToHex(getHash(word));
+    }
+
+    private String bytesToHex(final byte[] hashes) {
 
         final StringBuilder hexString = new StringBuilder();
 
@@ -47,9 +49,8 @@ public class HashGenerator {
     public int getDifference(final byte[] fileName, final byte[] nodeId) {
 
         int diff = 0;
-        final ArrayList<Integer> diffList = new ArrayList<>();
         for (int i = 0; i < 64; i++) {
-            diff = diff + Math.abs(fileName[i] - nodeId[i]);
+            diff += Math.abs(fileName[i] - nodeId[i]);
         }
 
         return diff;

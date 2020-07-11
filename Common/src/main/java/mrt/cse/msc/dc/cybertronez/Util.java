@@ -130,11 +130,11 @@ public class Util {
 
     public Node selectNode(final String fileName, final List<Node> nodeList) {
 
-        final String fileHash = hashGenerator.getHash(fileName);
+        final byte[] fileHash = hashGenerator.getHash(fileName);
         final List<Integer> diffList = new ArrayList<>();
         for (int i = 0; i < nodeList.size(); i++) {
             final Node currentNode = nodeList.get(i);
-            final int diff = hashGenerator.getDifference(fileHash.getBytes(), currentNode.getUserNameHash().getBytes());
+            final int diff = hashGenerator.getDifference(fileHash, currentNode.getUserNameHash().getBytes());
             diffList.add(diff);
         }
         final int nodeIndex = Collections.min(diffList);
@@ -146,10 +146,9 @@ public class Util {
         for (final String fileName : fileList) {
             int currentDiff = 0;
             int leastDiffIndex = 0;
-            final String fileHash = hashGenerator.getHash(fileName);
+            final byte[] fileHash = hashGenerator.getHash(fileName);
             for (int i = 0; i < nodeList.size(); i++) {
-                final int diff = hashGenerator.getDifference(fileHash.getBytes(),
-                        nodeList.get(i).getUserNameHash().getBytes());
+                final int diff = hashGenerator.getDifference(fileHash, nodeList.get(i).getUserNameHash().getBytes());
                 if (currentDiff == 0) {
                     currentDiff = diff;
                     leastDiffIndex = i;
