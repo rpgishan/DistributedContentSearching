@@ -2,7 +2,7 @@
   <configuration default="false" name="Client10" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="mrt.cse.msc.dc.cybertronez.Client" />
     <module name="NodeServer" />
-    <option name="PROGRAM_PARAMETERS" value="127.0.0.1 8090 127.0.0.1 55555" />
+    <option name="PROGRAM_PARAMETERS" value="8090 127.0.0.1 55555" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="mrt.cse.msc.dc.cybertronez.test.*" />

@@ -14,10 +14,10 @@ Build the project using `mvn clean install`.
 ### Step 2
 Run the Jar `BootstrapServer-1.0-SNAPSHOT.jar` created inside the `BootstrapServer/target` to start the Bootstrap server.
 ### Step 3
-Run the Jar `NodeServer-1.0-SNAPSHOT.jar` created inside the `NodeServer/target` to start the client nodes by running the following command providing the `ip address`, `port`, `bootstrap_ip_address` and `bootstrap_port` for each node as arguments.
+Run the Jar `NodeServer-1.0-SNAPSHOT.jar` created inside the `NodeServer/target` to start the client nodes by running the following command providing the `port`, `bootstrap_ip_address` and `bootstrap_port` for each node as arguments.
 ```sh
-java -jar NodeServer-1.0-SNAPSHOT.jar <node_ip_address> <node_port> <bootstrap_ip_address> <bootstrap_port>
-java -jar NodeServer-1.0-SNAPSHOT.jar localhost 8082 localhost 55555
+java -jar NodeServer-1.0-SNAPSHOT.jar <node_port> <bootstrap_ip_address> <bootstrap_port>
+java -jar NodeServer-1.0-SNAPSHOT.jar 8082 localhost 55555
 ```
 ### Step 4
 To perform a file search operation, establish a netcat connection using the following command.

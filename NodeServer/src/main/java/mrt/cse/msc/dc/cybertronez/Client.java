@@ -8,6 +8,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,18 +34,23 @@ public class Client {
 
     public static void main(final String[] args) {
 
-        if (args.length == 4) {
-            final String ip = args[0];
-            final String port = args[1];
-            final String bsIp = args[2];
-            final String bsPort = args[3];
+        if (args.length >= 3) {
+            final String port = args[0];
+            final String bsIp = args[1];
+            final String bsPort = args[2];
 
-            new Client(ip, port, bsIp, bsPort);
+            new Client(port, bsIp, bsPort);
         }
     }
 
-    public Client(final String clientIp, final String clientPort, final String bsIp, final String bsPort) {
+    public Client(final String clientPort, final String bsIp, final String bsPort) {
 
+        String clientIp;
+        try {
+            clientIp = InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            clientIp = "localhost";
+        }
         bsServer = new Node(bsIp, bsPort);
         currentNode = new Node(clientIp, clientPort);
         logger = LogManager.getLogger(Client.class.getName() + " - " + currentNode.toString());
