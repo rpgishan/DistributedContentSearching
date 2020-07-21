@@ -16,11 +16,11 @@ class HealthCheck implements Runnable {
     private Logger logger;
     private Util util;
 
-    HealthCheck(final Client client) {
+    HealthCheck(final Server server) {
 
         util = new Util();
-        currentNode = client.getCurrentNode();
-        connectedNodes = client.getConnectedNodes();
+        currentNode = server.getCurrentNode();
+        connectedNodes = server.getConnectedNodes();
         logger = LogManager.getLogger(HealthCheck.class.getName() + " - " + currentNode.toString());
     }
 

@@ -10,7 +10,7 @@
             <PatternLayout pattern="${layout}"/>
         </Console>
 
-        <File name="LogFile" fileName="logs/client.log" append="true">
+        <File name="LogFile" fileName="logs/server.log" append="true">
             <PatternLayout pattern="${layout}"/>
         </File>
     </Appenders>

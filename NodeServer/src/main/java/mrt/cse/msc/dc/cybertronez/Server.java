@@ -21,7 +21,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 
-public class Client {
+public class Server {
 
     private static Logger logger = null;
     private Node bsServer;
@@ -32,18 +32,7 @@ public class Client {
     private Set<String> fileNames = new HashSet<>();
     private Util util;
 
-    public static void main(final String[] args) {
-
-        if (args.length >= 3) {
-            final String port = args[0];
-            final String bsIp = args[1];
-            final String bsPort = args[2];
-
-            new Client(port, bsIp, bsPort);
-        }
-    }
-
-    public Client(final String clientPort, final String bsIp, final String bsPort) {
+    public Server(final String clientPort, final String bsIp, final String bsPort) {
 
         String clientIp;
         try {
@@ -53,7 +42,7 @@ public class Client {
         }
         bsServer = new Node(bsIp, bsPort);
         currentNode = new Node(clientIp, clientPort);
-        logger = LogManager.getLogger(Client.class.getName() + " - " + currentNode.toString());
+        logger = LogManager.getLogger(Server.class.getName() + " - " + currentNode.toString());
         util = new Util();
         populateFiles();
         openSocket();

@@ -1,8 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Client12" type="Application" factoryName="Application">
-    <option name="MAIN_CLASS_NAME" value="mrt.cse.msc.dc.cybertronez.Client" />
+  <configuration default="false" name="Server2" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="mrt.cse.msc.dc.cybertronez.Main" />
     <module name="NodeServer" />
-    <option name="PROGRAM_PARAMETERS" value="8092 127.0.0.1 55555" />
+    <option name="PROGRAM_PARAMETERS" value="8082 127.0.0.1 55555" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="mrt.cse.msc.dc.cybertronez.test.*" />
