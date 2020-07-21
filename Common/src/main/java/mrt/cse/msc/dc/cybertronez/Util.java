@@ -147,7 +147,7 @@ public class Util {
         for (final String fileName : fileList) {
             int currentDiff = 0;
             int leastDiffIndex = 0;
-            final byte[] fileHash = hashGenerator.getHash(fileName);
+            final byte[] fileHash = hashGenerator.getHashString(fileName).getBytes();
             for (int i = 0; i < nodeList.size(); i++) {
                 final int diff = hashGenerator.getDifference(fileHash, nodeList.get(i).getUserNameHash().getBytes());
                 if (currentDiff == 0) {
@@ -160,7 +160,7 @@ public class Util {
                 }
             }
             final Node node = nodeList.get(leastDiffIndex);
-            nodeList.get(leastDiffIndex).addFileToList(fileName);
+            node.addFileToList(fileName);
             LOGGER.info("Selected file list: {}", node::getFieList);
         }
         return nodeList;
