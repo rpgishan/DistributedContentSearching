@@ -1,8 +1,8 @@
 package mrt.cse.msc.dc.cybertronez.test;
 
-import mrt.cse.msc.dc.cybertronez.Client;
+import mrt.cse.msc.dc.cybertronez.Server;
 
-public class StartClients {
+public class StartServers {
 
     static int noOfClients = 10;
 
@@ -13,7 +13,7 @@ public class StartClients {
         int portNo = 8081;
         final int endingPortNo = portNo + noOfClients;
         while (portNo < endingPortNo) {
-            new Client(Integer.toString(portNo), bsIP, bsPort);
+            new Server(Integer.toString(portNo), bsIP, bsPort);
             portNo++;
             try {
                 Thread.sleep(5000);

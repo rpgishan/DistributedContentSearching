@@ -3,9 +3,9 @@ A simple overlay-based solution that allows a set of nodes to share content (e.g
 
 ## Testing the System Implementation
 1. Start the Bootstrap Server by running the `BootstrapServer` module.
-2. Start the Client Nodes by running the `mrt.cse.msc.dc.cybertronez.test.StartClients` class in the `NodeServer` module.
+2. Start the Client Nodes by running the `mrt.cse.msc.dc.cybertronez.test.StartServers` class in the `NodeServer` module.
 3. Wait for the console output `Done...`.
-4. To test a client node, run the `mrt.cse.msc.dc.cybertronez.test.TestClient` class in the `NodeServer` module.
+4. To test a server node, run the `mrt.cse.msc.dc.cybertronez.test.TestClient` class in the `NodeServer` module.
 5. To test the file search, run the `mrt.cse.msc.dc.cybertronez.test.TestSearch` class in the `NodeServer` module.
 
 ## Running the System
@@ -14,7 +14,7 @@ Build the project using `mvn clean install`.
 ### Step 2
 Run the Jar `BootstrapServer-1.0-SNAPSHOT.jar` created inside the `BootstrapServer/target` to start the Bootstrap server.
 ### Step 3
-Run the Jar `NodeServer-1.0-SNAPSHOT.jar` created inside the `NodeServer/target` to start the client nodes by running the following command providing the `port`, `bootstrap_ip_address` and `bootstrap_port` for each node as arguments.
+Run the Jar `NodeServer-1.0-SNAPSHOT.jar` created inside the `NodeServer/target` to start the server nodes by running the following command providing the `port`, `bootstrap_ip_address` and `bootstrap_port` for each node as arguments.
 ```sh
 java -jar NodeServer-1.0-SNAPSHOT.jar <node_port> <bootstrap_ip_address> <bootstrap_port>
 java -jar NodeServer-1.0-SNAPSHOT.jar 8082 localhost 55555

@@ -16,7 +16,6 @@ import java.util.StringTokenizer;
 
 public class BootstrapServer {
 
-    private static Logger logger;
     private Util util = new Util();
 
     public static void main(final String[] args) {
@@ -24,12 +23,14 @@ public class BootstrapServer {
         new BootstrapServer().startBootstrapServer();
     }
 
+    @SuppressWarnings({"java:S3776", "java:S2119"})
     private void startBootstrapServer() {
 
         final Node bsNode = new Node("localhost", 55555);
-        logger = LogManager.getLogger(BootstrapServer.class.getName() + " - " + bsNode.toString());
+        Logger logger = LogManager.getLogger(BootstrapServer.class.getName() + " - " + bsNode.toString());
         String s;
         final List<Node> nodes = new ArrayList<>();
+        final Random r = new Random();
 
         try (final DatagramSocket sock = new DatagramSocket(bsNode.getPort())) {
             logger.info("Bootstrap Server created at {}. Waiting for incoming data...", bsNode::getPort);
@@ -82,21 +83,20 @@ public class BootstrapServer {
                                 replyBuilder.append(" 2 ").append(nodes.get(0).getIp()).append(" ").append(nodes.get(0).getPort())
                                         .append(" ").append(nodes.get(1).getIp()).append(" ").append(nodes.get(1).getPort());
                             } else {
-                                final Random r = new Random();
                                 final int Low = 0;
                                 final int High = nodes.size();
-                                final int random_1 = r.nextInt(High - Low) + Low;
-                                int random_2 = r.nextInt(High - Low) + Low;
-                                while (random_1 == random_2) {
-                                    random_2 = r.nextInt(High - Low) + Low;
+                                final int random1 = r.nextInt(High - Low) + Low;
+                                int random2 = r.nextInt(High - Low) + Low;
+                                while (random1 == random2) {
+                                    random2 = r.nextInt(High - Low) + Low;
                                 }
 
-                                final int finalRandom_ = random_2;
-                                logger.info("{} {}", () -> random_1, () -> finalRandom_);
+                                final int finalRandom_ = random2;
+                                logger.info("{} {}", () -> random1, () -> finalRandom_);
 
-                                replyBuilder.append(" 2 ").append(nodes.get(random_1).getIp()).append(" ")
-                                        .append(nodes.get(random_1).getPort()).append(" ").append(nodes.get(random_2).getIp()).append(" ")
-                                        .append(nodes.get(random_2).getPort());
+                                replyBuilder.append(" 2 ").append(nodes.get(random1).getIp()).append(" ")
+                                        .append(nodes.get(random1).getPort()).append(" ").append(nodes.get(random2).getIp()).append(" ")
+                                        .append(nodes.get(random2).getPort());
                             }
                             nodes.add(new Node(ip, port, username));
                         }
@@ -117,8 +117,8 @@ public class BootstrapServer {
                     for (int i = 0; i < nodes.size(); i++) {
                         if (nodes.get(i).getPort() == port) {
                             nodes.remove(i);
-
                             logger.info("Reply: {}", () -> reply);
+                            break;
                         }
                     }
                     final DatagramPacket dpReply = new DatagramPacket(reply.getBytes(), reply.getBytes().length,
