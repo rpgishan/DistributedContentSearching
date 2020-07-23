@@ -1,4 +1,4 @@
-package mrt.cse.msc.dc.cybertronez;
+package mrt.cse.msc.dc.cybertronez.file;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -8,7 +8,7 @@ import java.util.Random;
 
 public class FileGenerator {
 
-    public File generate(final int fileSize, final String fileName) {
+    public static File generate(final int fileSize, final String fileName) {
 //        String fileName = "sample-" + Calendar.getInstance().getTimeInMillis() + ".txt";
         final String filePath = fileName;
 
@@ -30,9 +30,4 @@ public class FileGenerator {
         return file;
     }
 
-    public static void main(final String[] args) {
-
-        new FileGenerator().generate(1024 * 1024 * (2 + new Random().nextInt(8)),
-                "sample-" + Calendar.getInstance().getTimeInMillis() + ".txt");
-    }
 }
