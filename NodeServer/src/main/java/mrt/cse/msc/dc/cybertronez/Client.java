@@ -1,12 +1,16 @@
 package mrt.cse.msc.dc.cybertronez;
 
+import com.sun.net.httpserver.HttpServer;
+import mrt.cse.msc.dc.cybertronez.file.api.FileAPI;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.wso2.msf4j.MicroservicesRunner;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -32,7 +36,10 @@ public class Client {
     private Set<String> fileNames = new HashSet<>();
     private Util util;
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws IOException {
+
+
+        HttpServer httpServer = HttpServer.create(new InetSocketAddress(8500), 0);
 
         if (args.length >= 3) {
             final String port = args[0];
@@ -58,7 +65,15 @@ public class Client {
         populateFiles();
         openSocket();
         join();
+        startFileApi();
         startHealthCheck();
+    }
+
+    private void startFileApi() {
+        new Thread(() -> {
+            logger.info("Initializing file API in the node... ");
+            new MicroservicesRunner(9443).deploy(new FileAPI()).start();
+        }).start();
     }
 
     private void startHealthCheck() {
@@ -376,7 +391,7 @@ public class Client {
         }
 
         final int finalHops1 = hops;
-        logger.info("File not found for \"{}\" in {}. Current hops: {}", () -> query, currentNode::toString, () -> finalHops1);
+        logger.info("FileDAO not found for \"{}\" in {}. Current hops: {}", () -> query, currentNode::toString, () -> finalHops1);
 
         final String propagatedNodesString = convertPropagatedNodesToString(propagatedNodes);
 
