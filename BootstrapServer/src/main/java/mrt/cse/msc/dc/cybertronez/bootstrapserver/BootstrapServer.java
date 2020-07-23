@@ -3,8 +3,10 @@ package mrt.cse.msc.dc.cybertronez.bootstrapserver;
 import mrt.cse.msc.dc.cybertronez.Messages;
 import mrt.cse.msc.dc.cybertronez.Node;
 import mrt.cse.msc.dc.cybertronez.Util;
+import mrt.cse.msc.dc.cybertronez.bootstrapserver.api.BootStrapAPI;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.wso2.msf4j.MicroservicesRunner;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -16,11 +18,22 @@ import java.util.StringTokenizer;
 
 public class BootstrapServer {
 
+    private static Logger LOG = LogManager.getLogger(BootstrapServer.class);
     private Util util = new Util();
 
     public static void main(final String[] args) {
 
-        new BootstrapServer().startBootstrapServer();
+        // start bootstrap server
+        new Thread(() -> {
+            LOG.info("Initializing bootstrap server... ");
+            new BootstrapServer().startBootstrapServer();
+        }).start();
+
+        // start http server
+        new Thread(() -> {
+            LOG.info("Initializing HTTP API in the bootstrap server... ");
+            new MicroservicesRunner(55556).deploy(new BootStrapAPI()).start();
+        }).start();
     }
 
     @SuppressWarnings({"java:S3776", "java:S2119"})
