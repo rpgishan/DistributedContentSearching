@@ -49,7 +49,7 @@ public class Server {
         populateFiles();
         openSocket();
         join();
-        startFileApi();
+        startFileApi(Integer.parseInt(clientPort) + 100);
         startHealthCheck();
     }
 
@@ -437,10 +437,10 @@ public class Server {
         }).start();
     }
 
-    private void startFileApi() {
+    private void startFileApi(int port) {
         new Thread(() -> {
             logger.info("Initializing file API in the node... ");
-            new MicroservicesRunner(9443).deploy(new FileAPI()).start();
+            new MicroservicesRunner(port).deploy(new FileAPI()).start();
         }).start();
     }
 
