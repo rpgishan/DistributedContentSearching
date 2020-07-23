@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 public class Server {
@@ -373,21 +374,77 @@ public class Server {
                 Integer.toString(hops), propagatedNodesString);
     }
 
-    private Set<Node> getNodesToBeSearched(String query) {
+
+    private String propagateHashedSearch(final Query query, int hops, final Set<Node> propagatedNodes) {
+
+        try (final DatagramSocket socket = new DatagramSocket()) {
+            for (Map.Entry<Integer, Node> entry : getNodesToBeSearched(query.getQuery()).entrySet()) {
+
+                final int finalHops = hops;
+                logger.info("Propagate search of \"{}\" to {}. Current hops: {}", () -> query, entry.getValue()::toString, () -> finalHops);
+
+                if (propagatedNodes.contains(entry.getValue())) {
+                    continue;
+                }
+
+                final String propagatedNodesString = convertPropagatedNodesToString(propagatedNodes);
+
+                final byte[] buffer = util.generateMessage(Messages.SER.getValue(), query.getInitiatedNode().getIp(),
+                        Integer.toString(query.getInitiatedNode().getPort()), Integer.toString(hops),
+                        propagatedNodesString, query.getQuery()).getBytes();
+                String response = util.sendMessage(buffer, entry.getValue().getIp(), socket, entry.getValue().getPort(), Util.DEFAULT_TIMEOUT);
+
+                if(response.endsWith("\n")){
+                    response = response.substring(0,response.length()-1);
+                }
+
+                final StringTokenizer st = new StringTokenizer(response, " ");
+                final String length = st.nextToken();
+                final String command = st.nextToken();
+                if (command.equals(Messages.SEROK.getValue())) {
+                    final String code = st.nextToken();
+                    if (code.equals(Messages.CODE0.getValue()) || code.equals(Messages.ERROR.getValue())) {
+                        return response;
+                    } else if (code.equals(Messages.CODE9998.getValue())) {
+                        final String error = st.nextToken();
+                        final int newHops = Integer.parseInt(st.nextToken());
+                        hops = newHops;
+
+                        for (int i = 0; i < hops; i++) {
+                            final String ip = st.nextToken();
+                            final String port = st.nextToken();
+                            propagatedNodes.add(new Node(ip, port));
+                        }
+
+                        logger.info("Got search response error of \"{}\" - \"{}\" for \"{}\" from {}. Current hops: {}", () -> code,
+                                () -> error, () -> query, entry.getValue()::toString, () -> newHops);
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            logger.error("SocketException", e);
+        }
+
+        final int finalHops1 = hops;
+        logger.info("File not found for \"{}\" in {}. Current hops: {}", () -> query, currentNode::toString, () -> finalHops1);
+
+        final String propagatedNodesString = convertPropagatedNodesToString(propagatedNodes);
+
+        return util.generateMessage(Messages.SEROK.getValue(), Messages.CODE9998.getValue(), Messages.NOT_FOUND.getValue(),
+                Integer.toString(hops), propagatedNodesString);
+    }
+
+
+
+    private TreeMap<Integer,Node> getNodesToBeSearched(String query) {
 //TODO need to implement
-        Map<Integer, List<Node>> orderedNodes = new HashMap<>();
-        Set<Node> orderedNodesSet = new LinkedHashSet<>();
-//        connectedNodes.forEach(node -> {
-//            byte[]
-//        });
-        return orderedNodesSet;
+       return util.getSortedNodeList(query,connectedNodes);
     }
 
     private List<Node> getNodesToBeSearched() {
 
         return connectedNodes;
     }
-
     private String convertPropagatedNodesToString(final Set<Node> nodeCollection) {
 
         final StringBuilder propagatedNodesBuilder = new StringBuilder(nodeCollection.size());
@@ -472,11 +529,11 @@ public class Server {
         //call this when using hashes
         // nodes.forEach(this::forwardFileNames);
         //assign file list for each node
-//        if (!connectedNodes.isEmpty()) {
-//            util.selectFilesForNode(fileNames, connectedNodes);
-//            connectedNodes.forEach(this::forwardJoinRequestWithFileNames);//TODO need to fix errors
-//        }
-        connectedNodes.forEach(this::outgoingRequestToPairUp);
+        if (!connectedNodes.isEmpty()) {
+            util.selectFilesForNode(fileNames, connectedNodes);
+            connectedNodes.forEach(this::forwardJoinRequestWithFileNames);//TODO need to fix errors
+        }
+        //connectedNodes.forEach(this::outgoingRequestToPairUp);
     }
 
     private void outgoingRequestToPairUp(final Node node) {
