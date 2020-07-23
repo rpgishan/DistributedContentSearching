@@ -12,8 +12,10 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
 
 public class Util {
 
@@ -164,6 +166,22 @@ public class Util {
             LOGGER.info("Selected file list: {}", node::getFieList);
         }
         return nodeList;
+    }
+
+    public TreeMap<Integer, Node> getSortedNodeList(String query, List<Node> connectedNodes) {
+
+        byte[] queryHash = hashGenerator.getHashString(query).getBytes();
+        //order is maintained according to key.
+        //key is the difference between the query and the node hash
+        TreeMap<Integer, Node> sortedNodes = new TreeMap<>();
+        for (int i = 0; i < connectedNodes.size(); i++) {
+            final int diff = hashGenerator.getDifference(queryHash, connectedNodes.get(i).getUserNameHash().getBytes());
+            sortedNodes.put(diff, connectedNodes.get(i));
+        }
+        for (Map.Entry<Integer, Node> entry : sortedNodes.entrySet())
+            System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+
+        return sortedNodes;
     }
 
 }
