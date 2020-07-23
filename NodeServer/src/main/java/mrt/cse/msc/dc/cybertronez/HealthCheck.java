@@ -39,7 +39,7 @@ class HealthCheck implements Runnable {
                 try {
                     final InetAddress address = InetAddress.getByName(ip);
                     final boolean reachable = address.isReachable(5000);
-                    if (reachable && util.isSocketAvailable(node)) {
+                    if (reachable /*&& util.isSocketAvailable(node)*/) {
                         i++;
                         logger.debug("{}:{} is reachable!", node::getIp, node::getPort);
                     } else {

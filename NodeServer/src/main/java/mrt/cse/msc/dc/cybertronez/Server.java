@@ -319,71 +319,14 @@ public class Server {
     private String propagateSearch(final Query query, int hops, final Set<Node> propagatedNodes) {
 
         try (final DatagramSocket socket = new DatagramSocket()) {
-            for (final Node node : getNodesToBeSearched()) {
-                final int finalHops = hops;
-                logger.info("Propagate search of \"{}\" to {}. Current hops: {}", () -> query, node::toString, () -> finalHops);
-
-                if (propagatedNodes.contains(node)) {
-                    continue;
-                }
-
-                final String propagatedNodesString = convertPropagatedNodesToString(propagatedNodes);
-
-                final byte[] buffer = util.generateMessage(Messages.SER.getValue(), query.getInitiatedNode().getIp(),
-                        Integer.toString(query.getInitiatedNode().getPort()), Integer.toString(hops),
-                        propagatedNodesString, query.getQuery()).getBytes();
-                String response = util.sendMessage(buffer, node.getIp(), socket, node.getPort(), Util.DEFAULT_TIMEOUT);
-
-                if(response.endsWith("\n")){
-                    response = response.substring(0,response.length()-1);
-                }
-
-                final StringTokenizer st = new StringTokenizer(response, " ");
-                final String length = st.nextToken();
-                final String command = st.nextToken();
-                if (command.equals(Messages.SEROK.getValue())) {
-                    final String code = st.nextToken();
-                    if (code.equals(Messages.CODE0.getValue()) || code.equals(Messages.ERROR.getValue())) {
-                        return response;
-                    } else if (code.equals(Messages.CODE9998.getValue())) {
-                        final String error = st.nextToken();
-                        final int newHops = Integer.parseInt(st.nextToken());
-                        hops = newHops;
-
-                        for (int i = 0; i < hops; i++) {
-                            final String ip = st.nextToken();
-                            final String port = st.nextToken();
-                            propagatedNodes.add(new Node(ip, port));
-                        }
-
-                        logger.info("Got search response error of \"{}\" - \"{}\" for \"{}\" from {}. Current hops: {}", () -> code,
-                                () -> error, () -> query, node::toString, () -> newHops);
-                    }
-                }
-            }
-        } catch (SocketException e) {
-            logger.error("SocketException", e);
-        }
-
-        final int finalHops1 = hops;
-        logger.info("File not found for \"{}\" in {}. Current hops: {}", () -> query, currentNode::toString, () -> finalHops1);
-
-        final String propagatedNodesString = convertPropagatedNodesToString(propagatedNodes);
-
-        return util.generateMessage(Messages.SEROK.getValue(), Messages.CODE9998.getValue(), Messages.NOT_FOUND.getValue(),
-                Integer.toString(hops), propagatedNodesString);
-    }
-
-
-    private String propagateHashedSearch(final Query query, int hops, final Set<Node> propagatedNodes) {
-
-        try (final DatagramSocket socket = new DatagramSocket()) {
             for (Map.Entry<Integer, Node> entry : getNodesToBeSearched(query.getQuery()).entrySet()) {
-
+            //for (final Node node : getNodesToBeSearched()) {
                 final int finalHops = hops;
+                //logger.info("Propagate search of \"{}\" to {}. Current hops: {}", () -> query, node::toString, () -> finalHops);
                 logger.info("Propagate search of \"{}\" to {}. Current hops: {}", () -> query, entry.getValue()::toString, () -> finalHops);
 
-                if (propagatedNodes.contains(entry.getValue())) {
+                //if (propagatedNodes.contains(node)) {
+                    if (propagatedNodes.contains(entry.getValue())) {
                     continue;
                 }
 
@@ -392,6 +335,7 @@ public class Server {
                 final byte[] buffer = util.generateMessage(Messages.SER.getValue(), query.getInitiatedNode().getIp(),
                         Integer.toString(query.getInitiatedNode().getPort()), Integer.toString(hops),
                         propagatedNodesString, query.getQuery()).getBytes();
+               // String response = util.sendMessage(buffer, node.getIp(), socket, node.getPort(), Util.DEFAULT_TIMEOUT);
                 String response = util.sendMessage(buffer, entry.getValue().getIp(), socket, entry.getValue().getPort(), Util.DEFAULT_TIMEOUT);
 
                 if(response.endsWith("\n")){
@@ -416,6 +360,8 @@ public class Server {
                             propagatedNodes.add(new Node(ip, port));
                         }
 
+                        /*logger.info("Got search response error of \"{}\" - \"{}\" for \"{}\" from {}. Current hops: {}", () -> code,
+                                () -> error, () -> query, node::toString, () -> newHops);*/
                         logger.info("Got search response error of \"{}\" - \"{}\" for \"{}\" from {}. Current hops: {}", () -> code,
                                 () -> error, () -> query, entry.getValue()::toString, () -> newHops);
                     }

@@ -84,7 +84,7 @@ public class Util {
 
         try (final DatagramSocket socket = new DatagramSocket()) {
             final byte[] pingMsg = generateMessage(Messages.PING.getValue()).getBytes();
-            final String response = sendMessage(pingMsg, node.getIp(), socket, node.getPort(), 5000);
+            final String response = sendMessage(pingMsg, node.getIp(), socket, node.getPort(), 10000);
             return response.contains(Messages.PING_OK.getValue());
         } catch (SocketException e) {
             LOGGER.error("SocketException", e);
@@ -179,7 +179,7 @@ public class Util {
             sortedNodes.put(diff, connectedNodes.get(i));
         }
         for (Map.Entry<Integer, Node> entry : sortedNodes.entrySet())
-            System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+            LOGGER.info("Key = {} , Value = {} " , entry.getKey() ,  entry.getValue());
 
         return sortedNodes;
     }
