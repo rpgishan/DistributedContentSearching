@@ -1,5 +1,8 @@
 package mrt.cse.msc.dc.cybertronez.file.api;
 
+import mrt.cse.msc.dc.cybertronez.Messages;
+import mrt.cse.msc.dc.cybertronez.Node;
+import mrt.cse.msc.dc.cybertronez.Util;
 import mrt.cse.msc.dc.cybertronez.dao.NodeDAO;
 import mrt.cse.msc.dc.cybertronez.file.FileGenerator;
 import mrt.cse.msc.dc.cybertronez.file.api.dao.FileListDAO;
@@ -7,9 +10,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.StringTokenizer;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -18,7 +28,16 @@ import javax.ws.rs.core.Response;
 
 @Path("/fileAPI")
 public class FileAPI {
+
     private static Logger LOG = LogManager.getLogger(FileAPI.class);
+
+    public void setNodeInfo(Node nodeInfo) {
+
+        this.nodeInfo = nodeInfo;
+    }
+
+    private Node nodeInfo;
+    Util util = new Util();
 
     @GET
     @Path("/retrieveFile/{file_name}")
@@ -38,13 +57,54 @@ public class FileAPI {
         // initiate UDP file search and return the details of node with file
         LOG.info("File search initiated for file " + fileName);
 
-        // TODO: get real values for host and port
-        String host = "localhost";
-        int port = 0;
+        //initiate search request
+        final InetAddress address;
+        DatagramPacket packet;
+        String received;
+        String foundIp = "";
+        String foundPort = "";
+
+        byte[] buf;
+        final byte[] resbuf = new byte[65000];
+        String port = Integer.toString(this.nodeInfo.getPort());
+        String nodeIP = this.nodeInfo.getIp();
+        try (final DatagramSocket socket = new DatagramSocket()) {
+            address = InetAddress.getByName(this.nodeInfo.getIp());
+
+            //Search
+            final String generateMessage = util.generateMessage(Messages.SER.getValue(),nodeIP , port, "0", fileName);
+
+            buf = generateMessage.getBytes();
+            packet = new DatagramPacket(buf, buf.length, address, Integer.parseInt(port));
+            socket.send(packet);
+            packet = new DatagramPacket(resbuf, resbuf.length);
+            socket.receive(packet);
+            received = new String(packet.getData(), 0, packet.getLength());
+
+            final StringTokenizer st = new StringTokenizer(received, " ");
+            final String length = st.nextToken();
+            final String command = st.nextToken();
+            if (command.equals(Messages.SEROK.getValue())) {
+                final String code = st.nextToken();
+                if (code.equals(Messages.CODE0.getValue())) {
+                    String[] host = received.split(" ");
+                    foundIp = host[host.length - 1].split(":")[0];
+                    foundPort = host[host.length - 1].split(":")[1];
+                }
+                LOG.info("Response received for file search api call {}", received );
+
+            }
+
+        } catch (SocketException e) {
+            LOG.error("SocketException ", e);
+        } catch (IOException e) {
+            LOG.error("IOException ", e);
+        }
+
         // create response object
         NodeDAO node = new NodeDAO();
-        node.setHost(host);
-        node.setPort(port);
+        node.setHost(foundIp);
+        node.setPort(Integer.parseInt(foundPort));
 
         return Response.status(200).entity(node).type(MediaType.APPLICATION_JSON).build();
     }
@@ -59,10 +119,10 @@ public class FileAPI {
         NodeDAO node = new NodeDAO();
 
         // TODO: set real node information
-        node.setPort(0);
-        node.setHost("localhost");
+        node.setPort(this.nodeInfo.getPort());
+        node.setHost(this.nodeInfo.getIp());
 
-        List<String> fileList = new ArrayList<>();
+        List<String> fileList = Arrays.asList(this.nodeInfo.getFieList().split(","));
 
         // TODO: populate file list with real data
 
