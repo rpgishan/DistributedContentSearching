@@ -440,7 +440,9 @@ public class Server {
     private void startFileApi(int port) {
         new Thread(() -> {
             logger.info("Initializing file API in the node... ");
-            new MicroservicesRunner(port).deploy(new FileAPI()).start();
+            FileAPI fileAPI = new FileAPI();
+            fileAPI.setNodeInfo(currentNode);
+            new MicroservicesRunner(port).deploy(fileAPI).start();
         }).start();
     }
 
