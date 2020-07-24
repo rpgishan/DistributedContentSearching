@@ -49,7 +49,12 @@ public class FileAPI {
         LOG.info("Creating file with name " + fileName + " and with size " + fileSize);
         File responseFIle = FileGenerator.generate(fileSize, fileName);
         String contentDispositionHeader = "attachment; filename=\"" + fileName + "\"";
-        return Response.status(200).entity(responseFIle).type("text/plain").header("Content-Disposition", contentDispositionHeader).build();
+        return Response.status(200)
+                .entity(responseFIle).type("text/plain")
+                .header("Content-Disposition", contentDispositionHeader)
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "GET")
+                .build();
     }
 
     @GET
@@ -82,7 +87,10 @@ public class FileAPI {
                     foundIp = host[host.length - 1].split(":")[0];
                     foundPort = host[host.length - 1].split(":")[1];
                 } else if (code.equals(Messages.CODE9998.getValue())) {
-                    return Response.status(400).entity("File not found").type(MediaType.TEXT_PLAIN).build();
+                    return Response.status(400)
+                            .header("Access-Control-Allow-Origin", "*")
+                            .header("Access-Control-Allow-Methods", "GET")
+                            .entity("File not found").type(MediaType.TEXT_PLAIN).build();
                 }
                 LOG.info("Response received for file search api call {}", received);
             }
@@ -97,10 +105,16 @@ public class FileAPI {
             node.setHost(foundIp);
             node.setPort(Integer.parseInt(foundPort.replace("\n", "").replace("\r", "")));
 
-            return Response.status(200).entity(node).type(MediaType.APPLICATION_JSON).build();
+            return Response.status(200).entity(node)
+                    .header("Access-Control-Allow-Origin", "*")
+                    .header("Access-Control-Allow-Methods", "GET")
+                    .type(MediaType.APPLICATION_JSON).build();
         }
 
-        return Response.status(500).entity("Internal Server Error").type(MediaType.TEXT_PLAIN).build();
+        return Response.status(500)
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "GET")
+                .entity("Internal Server Error").type(MediaType.TEXT_PLAIN).build();
 
     }
 
@@ -124,6 +138,9 @@ public class FileAPI {
         fileListDAO.setNode(node);
         fileListDAO.setFiles(fileList);
 
-        return Response.status(200).entity(fileListDAO).type(MediaType.APPLICATION_JSON).build();
+        return Response.status(200).entity(fileListDAO)
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "GET")
+                .type(MediaType.APPLICATION_JSON).build();
     }
 }
