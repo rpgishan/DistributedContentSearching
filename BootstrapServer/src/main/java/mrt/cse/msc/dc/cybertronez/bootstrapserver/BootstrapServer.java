@@ -20,6 +20,7 @@ public class BootstrapServer {
 
     private static Logger LOG = LogManager.getLogger(BootstrapServer.class);
     private Util util = new Util();
+    private static List<Node> nodes = new ArrayList<>();
 
     public static void main(final String[] args) {
 
@@ -32,7 +33,9 @@ public class BootstrapServer {
         // start http server
         new Thread(() -> {
             LOG.info("Initializing HTTP API in the bootstrap server... ");
-            new MicroservicesRunner(55556).deploy(new BootStrapAPI()).start();
+            BootStrapAPI bootStrapAPI = new BootStrapAPI();
+            bootStrapAPI.setNodeList(nodes);
+            new MicroservicesRunner(55556).deploy(bootStrapAPI).start();
         }).start();
     }
 
@@ -42,7 +45,6 @@ public class BootstrapServer {
         final Node bsNode = new Node("localhost", 55555);
         Logger logger = LogManager.getLogger(BootstrapServer.class.getName() + " - " + bsNode.toString());
         String s;
-        final List<Node> nodes = new ArrayList<>();
         final Random r = new Random();
 
         try (final DatagramSocket sock = new DatagramSocket(bsNode.getPort())) {
