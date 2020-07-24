@@ -8,6 +8,7 @@ import mrt.cse.msc.dc.cybertronez.file.FileGenerator;
 import mrt.cse.msc.dc.cybertronez.file.api.dao.FileListDAO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.wso2.carbon.utils.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,56 +58,50 @@ public class FileAPI {
         // initiate UDP file search and return the details of node with file
         LOG.info("File search initiated for file " + fileName);
 
-        //initiate search request
-        final InetAddress address;
-        DatagramPacket packet;
-        String received;
         String foundIp = "";
         String foundPort = "";
-
-        byte[] buf;
-        final byte[] resbuf = new byte[65000];
-        String port = Integer.toString(this.nodeInfo.getPort());
-        String nodeIP = this.nodeInfo.getIp();
         try (final DatagramSocket socket = new DatagramSocket()) {
-            address = InetAddress.getByName(this.nodeInfo.getIp());
 
             //Search
-            final String generateMessage = util.generateMessage(Messages.SER.getValue(),nodeIP , port, "0", fileName);
-
-            buf = generateMessage.getBytes();
-            packet = new DatagramPacket(buf, buf.length, address, Integer.parseInt(port));
-            socket.send(packet);
-            packet = new DatagramPacket(resbuf, resbuf.length);
-            socket.receive(packet);
-            received = new String(packet.getData(), 0, packet.getLength());
+            String port = Integer.toString(this.nodeInfo.getPort());
+            String nodeIP = this.nodeInfo.getIp();
+            //initiate search request
+            final String generateMessage = util.generateMessage(Messages.SER.getValue(), nodeIP, port, "0",
+                    fileName);
+            String received = util.sendMessage(generateMessage.getBytes(), nodeIP, socket, this.nodeInfo.getPort(),
+                    Util.DEFAULT_TIMEOUT);
 
             final StringTokenizer st = new StringTokenizer(received, " ");
             final String length = st.nextToken();
             final String command = st.nextToken();
+            final String code = st.nextToken();
+
             if (command.equals(Messages.SEROK.getValue())) {
-                final String code = st.nextToken();
                 if (code.equals(Messages.CODE0.getValue())) {
                     String[] host = received.split(" ");
                     foundIp = host[host.length - 1].split(":")[0];
                     foundPort = host[host.length - 1].split(":")[1];
+                } else if (code.equals(Messages.CODE9998.getValue())) {
+                    return Response.status(400).entity("File not found").type(MediaType.TEXT_PLAIN).build();
                 }
-                LOG.info("Response received for file search api call {}", received );
-
+                LOG.info("Response received for file search api call {}", received);
             }
 
         } catch (SocketException e) {
             LOG.error("SocketException ", e);
-        } catch (IOException e) {
-            LOG.error("IOException ", e);
         }
 
         // create response object
         NodeDAO node = new NodeDAO();
-        node.setHost(foundIp);
-        node.setPort(Integer.parseInt(foundPort));
+        if (!StringUtils.isNullOrEmpty(foundIp) && !StringUtils.isNullOrEmpty(foundPort)) {
+            node.setHost(foundIp);
+            node.setPort(Integer.parseInt(foundPort.replace("\n", "").replace("\r", "")));
 
-        return Response.status(200).entity(node).type(MediaType.APPLICATION_JSON).build();
+            return Response.status(200).entity(node).type(MediaType.APPLICATION_JSON).build();
+        }
+
+        return Response.status(500).entity("Internal Server Error").type(MediaType.TEXT_PLAIN).build();
+
     }
 
     @GET
