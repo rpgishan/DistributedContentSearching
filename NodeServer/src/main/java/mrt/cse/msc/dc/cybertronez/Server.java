@@ -165,6 +165,7 @@ public class Server {
             fileNames.forEach(s -> fileSb.append(s).append(", "));
             logger.info("populateFiles fileNames: {}", fileSb::toString);
         }
+        this.currentNode.addFileToList(fileNames);
     }
 
     private String processDetailsRequest() {
@@ -441,7 +442,7 @@ public class Server {
         new Thread(() -> {
             logger.info("Initializing file API in the node... ");
             FileAPI fileAPI = new FileAPI();
-            fileAPI.setNodeInfo(currentNode);
+            fileAPI.setNodeInfo(this.currentNode);
             new MicroservicesRunner(port).deploy(fileAPI).start();
         }).start();
     }
