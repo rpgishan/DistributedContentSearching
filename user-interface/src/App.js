@@ -4,6 +4,7 @@ import {Route, Switch} from 'react-router';
 
 import './App.css';
 import fileSearchPage from './Pages/FileSearchPage';
+import nodeDistributionPage from './Pages/NodeDistributionPage';
 
 class App extends Component {
 
@@ -13,6 +14,7 @@ class App extends Component {
                 <Switch>
                     <Route exact path='/' component={fileSearchPage}/>
                     <Route exact path='/file-search' component={fileSearchPage}/>
+                    <Route exact path='/node-distribution' component={nodeDistributionPage}/>
                 </Switch>
             </BrowserRouter>
         );

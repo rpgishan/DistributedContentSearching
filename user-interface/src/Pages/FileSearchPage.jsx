@@ -161,7 +161,7 @@ class FileSearchPage extends Component {
                                 </TableHead>
                                 <TableBody>
                                     <TableRow key={this.state.searchResult.fileName}>
-                                        <TableCell> <Link component="button" variant="body2" onClick={() => {
+                                        <TableCell> <Link variant="body2" onClick={() => {
                                             var node = {host:this.state.searchResult.host, port:this.state.searchResult.port};
                                             new NodeAPI().retrieveFile(node, this.state.searchResult.fileName).then((response) => {
                                                 var element = document.createElement('a');

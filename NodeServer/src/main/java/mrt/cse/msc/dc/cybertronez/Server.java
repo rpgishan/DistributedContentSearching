@@ -444,6 +444,7 @@ public class Server {
             logger.info("Initializing file API in the node... ");
             FileAPI fileAPI = new FileAPI();
             fileAPI.setNodeInfo(this.currentNode);
+            fileAPI.setConnectedNodes(this.connectedNodes);
             new MicroservicesRunner(port).deploy(fileAPI).start();
         }).start();
     }

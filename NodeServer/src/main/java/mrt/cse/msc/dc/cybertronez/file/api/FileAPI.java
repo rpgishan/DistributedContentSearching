@@ -7,15 +7,19 @@ import mrt.cse.msc.dc.cybertronez.dao.NodeDAO;
 import mrt.cse.msc.dc.cybertronez.file.FileGenerator;
 import mrt.cse.msc.dc.cybertronez.file.api.dao.ErrorResponse;
 import mrt.cse.msc.dc.cybertronez.file.api.dao.FileListDAO;
+import mrt.cse.msc.dc.cybertronez.file.api.dao.NodesDAO;
 import mrt.cse.msc.dc.cybertronez.file.api.dao.ResultsetNodeDAO;
+import mrt.cse.msc.dc.cybertronez.mapper.NodeMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.StringTokenizer;
 import javax.ws.rs.GET;
@@ -30,13 +34,32 @@ public class FileAPI {
 
     private static Logger LOG = LogManager.getLogger(FileAPI.class);
 
+    private Node nodeInfo;
+    private NodeMapper nodeMapper = new NodeMapper();
+    private List<Node> connectedNodes;
+
     public void setNodeInfo(Node nodeInfo) {
 
         this.nodeInfo = nodeInfo;
     }
 
-    private Node nodeInfo;
+    public void setConnectedNodes(List<Node> connectedNodes) {
+
+        this.connectedNodes = connectedNodes;
+    }
+
     Util util = new Util();
+
+    @GET
+    @Path("/retrieveConnectedNodes")
+    public Response getConnectedNodes() {
+        LOG.info("Returning details of all the connected nodes.. ");
+
+        NodesDAO nodes = new NodesDAO();
+        nodes.setNodes(Optional.ofNullable(connectedNodes).map(nodeMapper::convertToRest).orElse(new ArrayList<>()));
+
+        return Response.status(200).header("Access-Control-Allow-Origin", "*").entity(nodes).type(MediaType.APPLICATION_JSON).build();
+    }
 
     @GET
     @Path("/retrieveFile/{file_name}")

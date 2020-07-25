@@ -29,4 +29,8 @@ export default class NodeAPI {
     retrieveAllFiles(node) {
         return this.getHTTPClient(node).get(`/retrieveAllFiles`);
     }
+
+    retrieveConnectedNodes(node) {
+        return this.getHTTPClient(node).get(`/retrieveConnectedNodes`);
+    }
 }
