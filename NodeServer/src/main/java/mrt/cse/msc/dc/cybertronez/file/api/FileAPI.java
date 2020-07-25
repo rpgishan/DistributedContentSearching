@@ -75,6 +75,7 @@ public class FileAPI {
         ErrorResponse error = new ErrorResponse();
         String foundIp = "";
         String foundPort = "";
+        String foundFile = "";
         try (final DatagramSocket socket = new DatagramSocket()) {
 
             //Search
@@ -97,6 +98,7 @@ public class FileAPI {
                     String[] host = received.split(" ");
                     foundIp = host[host.length - 1].split(":")[0];
                     foundPort = host[host.length - 1].split(":")[1];
+                    foundFile = host[host.length - 2];
                 } else if (code.equals(Messages.CODE9998.getValue())) {
 
                     error.setError("File Could not be found.");
@@ -116,6 +118,7 @@ public class FileAPI {
         if (!StringUtils.isNullOrEmpty(foundIp) && !StringUtils.isNullOrEmpty(foundPort)) {
             node.setHost(foundIp);
             node.setPort(Integer.parseInt(foundPort.replace("\n", "").replace("\r", "")));
+            node.setFileName(foundFile);
 
             return Response.status(200).entity(node)
                     .header("Access-Control-Allow-Origin", "*")
