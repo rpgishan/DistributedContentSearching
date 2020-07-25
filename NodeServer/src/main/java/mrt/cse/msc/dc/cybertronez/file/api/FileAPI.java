@@ -5,6 +5,7 @@ import mrt.cse.msc.dc.cybertronez.Node;
 import mrt.cse.msc.dc.cybertronez.Util;
 import mrt.cse.msc.dc.cybertronez.dao.NodeDAO;
 import mrt.cse.msc.dc.cybertronez.file.FileGenerator;
+import mrt.cse.msc.dc.cybertronez.file.api.dao.ErrorResponse;
 import mrt.cse.msc.dc.cybertronez.file.api.dao.FileListDAO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,7 +63,7 @@ public class FileAPI {
     public Response searchFile(@PathParam("file_name") String fileName) {
         // initiate UDP file search and return the details of node with file
         LOG.info("File search initiated for file " + fileName);
-
+        ErrorResponse error = new ErrorResponse();
         String foundIp = "";
         String foundPort = "";
         try (final DatagramSocket socket = new DatagramSocket()) {
@@ -70,6 +71,7 @@ public class FileAPI {
             //Search
             String port = Integer.toString(this.nodeInfo.getPort());
             String nodeIP = this.nodeInfo.getIp();
+
             //initiate search request
             final String generateMessage = util.generateMessage(Messages.SER.getValue(), nodeIP, port, "0",
                     fileName);
@@ -87,10 +89,12 @@ public class FileAPI {
                     foundIp = host[host.length - 1].split(":")[0];
                     foundPort = host[host.length - 1].split(":")[1];
                 } else if (code.equals(Messages.CODE9998.getValue())) {
-                    return Response.status(400)
+
+                    error.setError("File Could not be found.");
+                    return Response.status(404)
                             .header("Access-Control-Allow-Origin", "*")
                             .header("Access-Control-Allow-Methods", "GET")
-                            .entity("File not found").type(MediaType.TEXT_PLAIN).build();
+                            .entity(error).type(MediaType.APPLICATION_JSON).build();
                 }
                 LOG.info("Response received for file search api call {}", received);
             }
@@ -111,10 +115,11 @@ public class FileAPI {
                     .type(MediaType.APPLICATION_JSON).build();
         }
 
+        error.setError("Internal server error.");
         return Response.status(500)
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Access-Control-Allow-Methods", "GET")
-                .entity("Internal Server Error").type(MediaType.TEXT_PLAIN).build();
+                .entity(error).type(MediaType.APPLICATION_JSON).build();
 
     }
 

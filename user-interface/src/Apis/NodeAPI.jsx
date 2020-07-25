@@ -2,10 +2,10 @@ import Axios from 'axios';
 
 export default class NodeAPI {
 
-    getHTTPClient(port) {
+    getHTTPClient(node) {
 
         let httpClient = Axios.create({
-            baseURL: `http://localhost:${port}/fileAPI`,
+            baseURL: `http://${node.host}:${node.port + 100}/fileAPI`,
             timeout: 30000,
         });
         httpClient.defaults.headers.post['Content-Type'] = 'application/json';
@@ -18,15 +18,15 @@ export default class NodeAPI {
         return httpClient;
     }
 
-    searchFile(port, file) {
-        return this.getHTTPClient(port).get(`/searchFile/${file}`);
+    searchFile(node, file) {
+        return this.getHTTPClient(node).get(`/searchFile/${file}`);
     }
 
-    retrieveFile(port, file) {
-        return this.getHTTPClient(port).get(`/retrieveFile/${file}`);
+    retrieveFile(node, file) {
+        return this.getHTTPClient(node).get(`/retrieveFile/${file}`);
     }
 
-    retrieveAllFiles(port) {
-        return this.getHTTPClient(port).get(`/retrieveAllFiles`);
+    retrieveAllFiles(node) {
+        return this.getHTTPClient(node).get(`/retrieveAllFiles`);
     }
 }
