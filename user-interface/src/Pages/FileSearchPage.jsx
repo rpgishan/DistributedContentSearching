@@ -8,6 +8,12 @@ import Col from 'react-bootstrap/Col';
 import 'bootstrap/dist/css/bootstrap.css';
 import BootStrapAPI from '../Apis/BootStrapAPI';
 import NodeAPI from '../Apis/NodeAPI';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
+import {Link} from 'react-router-dom';
 
 const styles = {
     container: {
@@ -26,7 +32,7 @@ const styles = {
         textAlign: 'center'
     },
     resultArea: {
-
+        marginTop: '10%'
     }
 };
 
@@ -39,7 +45,8 @@ class FileSearchPage extends Component {
             fileList: null,
             nodes: [],
             error: null,
-            resultSet: null
+            searchResult: null,
+            fileDownloadLink: ''
         };
 
         this.handleSearch = this.handleSearch.bind(this);
@@ -61,7 +68,9 @@ class FileSearchPage extends Component {
             var node = nodes[randomNodeIndex];
             // Sending the search request to the node
             new NodeAPI().searchFile(node, this.state.fileName).then((response) => {
-                this.setState({resultSet: response.data.node})
+                var result = response.data;
+                var downloadLink = `http://${result.host}:${result.port+100}/retrieveFile/${result.fileName}.txt`
+                this.setState({searchResult: response.data, fileDownloadLink:downloadLink})
             }).catch((error) => {
                 this.handleErrorResponses(error);
             });
@@ -106,6 +115,11 @@ class FileSearchPage extends Component {
         return false;
     }
 
+    // handleFileDownload(host, port, file) {
+    //     var node = {host:host, port:port}
+    //     new NodeAPI().retrieveFile(node, file).response()
+    // }
+
     renderFileSearchContent() {
         return (
             <Box style={styles.container}>
@@ -124,9 +138,32 @@ class FileSearchPage extends Component {
                         </Col>
                     </Row>
                 </Form>
-                <Box style={styles.resultArea}>
 
-                </Box>
+                {
+                    this.state.searchResult != null ?
+                        <Box style={styles.resultArea}>
+                            <Table aria-label="simple table">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>File</TableCell>
+                                        <TableCell align="right">Host</TableCell>
+                                        <TableCell align="right">Port</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    <TableRow key={this.state.searchResult.fileName}>
+                                        <TableCell align="right" component={Link}
+                                                   to={this.state.fileDownloadLink}>{this.state.searchResult.fileName}</TableCell>
+                                        <TableCell align="right">{this.state.searchResult.host}</TableCell>
+                                        <TableCell align="right">{this.state.searchResult.port}</TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </Box>
+                        :
+                        null
+                }
+
             </Box>);
     }
 
