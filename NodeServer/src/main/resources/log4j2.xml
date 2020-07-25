@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration status="info">
+    <Properties>
+        <Property name="layout">%d [%t] %-5level %logger - %m%n</Property>
+    </Properties>
+
+    <Appenders>
+
+        <Console name="Console">
+            <PatternLayout pattern="${layout}"/>
+        </Console>
+
+        <File name="LogFile" fileName="logs/server.log" append="true">
+            <PatternLayout pattern="${layout}"/>
+        </File>
+    </Appenders>
+
+    <Loggers>
+
+        <Logger name="mrt.cse.msc.dc.cybertronez" level="info" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="LogFile"/>
+        </Logger>
+
+        <Root level="info">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="LogFile"/>
+        </Root>
+
+    </Loggers>
+</Configuration>
