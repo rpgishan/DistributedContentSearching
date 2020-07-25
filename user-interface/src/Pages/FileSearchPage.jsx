@@ -69,8 +69,8 @@ class FileSearchPage extends Component {
             // Sending the search request to the node
             new NodeAPI().searchFile(node, this.state.fileName).then((response) => {
                 var result = response.data;
-                var downloadLink = `http://${result.host}:${result.port+100}/retrieveFile/${result.fileName}.txt`
-                this.setState({searchResult: response.data, fileDownloadLink:downloadLink})
+                var downloadLink = `http://${result.host}:${result.port + 100}/retrieveFile/${result.fileName}.txt`
+                this.setState({searchResult: response.data, fileDownloadLink: downloadLink})
             }).catch((error) => {
                 this.handleErrorResponses(error);
             });
@@ -115,9 +115,19 @@ class FileSearchPage extends Component {
         return false;
     }
 
-    // handleFileDownload(host, port, file) {
-    //     var node = {host:host, port:port}
-    //     new NodeAPI().retrieveFile(node, file).response()
+    // handleDownload() {
+    //     var node = {host:'localhost', port:8085};
+    //     new NodeAPI().retrieveFile(node, 'tintin.txt').then((response) => {
+    //         var element = document.createElement('a');
+    //         element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent
+    //         (response.data));
+    //         element.setAttribute('download', tableMeta.rowData[0]);
+    //         element.style.display = 'none';
+    //         document.body.appendChild(element);
+    //         element.click();
+    //     }).catch((error) =>{
+    //
+    //     });
     // }
 
     renderFileSearchContent() {
@@ -138,7 +148,6 @@ class FileSearchPage extends Component {
                         </Col>
                     </Row>
                 </Form>
-
                 {
                     this.state.searchResult != null ?
                         <Box style={styles.resultArea}>
@@ -146,16 +155,31 @@ class FileSearchPage extends Component {
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>File</TableCell>
-                                        <TableCell align="right">Host</TableCell>
-                                        <TableCell align="right">Port</TableCell>
+                                        <TableCell>Host</TableCell>
+                                        <TableCell>Port</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     <TableRow key={this.state.searchResult.fileName}>
-                                        <TableCell align="right" component={Link}
-                                                   to={this.state.fileDownloadLink}>{this.state.searchResult.fileName}</TableCell>
-                                        <TableCell align="right">{this.state.searchResult.host}</TableCell>
-                                        <TableCell align="right">{this.state.searchResult.port}</TableCell>
+                                        <TableCell> <Link component="button" variant="body2" onClick={() => {
+                                            var node = {host:this.state.searchResult.host, port:this.state.searchResult.port};
+                                            new NodeAPI().retrieveFile(node, this.state.searchResult.fileName).then((response) => {
+                                                var element = document.createElement('a');
+                                                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent
+                                                (response.data));
+                                                element.setAttribute('download', this.state.searchResult.fileName);
+                                                element.style.display = 'none';
+                                                document.body.appendChild(element);
+                                                element.click();
+                                                document.body.removeChild(element);
+                                            }).catch((error) => {
+                                                this.setState({error: error});
+                                            });
+                                        }}>
+                                            {this.state.searchResult.fileName}
+                                        </Link></TableCell>
+                                        <TableCell>{this.state.searchResult.host}</TableCell>
+                                        <TableCell>{this.state.searchResult.port}</TableCell>
                                     </TableRow>
                                 </TableBody>
                             </Table>
@@ -163,7 +187,6 @@ class FileSearchPage extends Component {
                         :
                         null
                 }
-
             </Box>);
     }
 
