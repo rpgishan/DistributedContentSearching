@@ -131,7 +131,6 @@ public class FileAPI {
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Access-Control-Allow-Methods", "GET")
                 .entity(error).type(MediaType.APPLICATION_JSON).build();
-
     }
 
     @OPTIONS
