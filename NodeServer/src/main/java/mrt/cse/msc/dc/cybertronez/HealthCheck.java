@@ -57,7 +57,7 @@ class HealthCheck implements Runnable {
                 break;
             }
             try {
-                Thread.sleep(60000);
+                Thread.sleep(2400000);
             } catch (InterruptedException e) {
                 logger.error("InterruptedException", e);
                 Thread.currentThread().interrupt();

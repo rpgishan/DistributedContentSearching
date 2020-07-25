@@ -136,7 +136,6 @@ class FileSearchPage extends Component {
                 <Box style={styles.headingArea}>
                     <h2 style={styles.heading}><b>DISTRIBUTED FILE SEARCH</b></h2>
                 </Box>
-                <Link to="/NodeDistributionPage"><Button variant="outlined">View Node Distribution</Button></Link><br/><br/><br/>
                 <Form onSubmit={this.handleSearch}>
                     <Row>
                         <Col xs={11}>
@@ -162,7 +161,7 @@ class FileSearchPage extends Component {
                                 </TableHead>
                                 <TableBody>
                                     <TableRow key={this.state.searchResult.fileName}>
-                                        <TableCell> <Link component="button" variant="body2" onClick={() => {
+                                        <TableCell> <Link variant="body2" onClick={() => {
                                             var node = {host:this.state.searchResult.host, port:this.state.searchResult.port};
                                             new NodeAPI().retrieveFile(node, this.state.searchResult.fileName).then((response) => {
                                                 var element = document.createElement('a');

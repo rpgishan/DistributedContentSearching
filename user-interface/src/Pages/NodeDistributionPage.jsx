@@ -2,12 +2,14 @@ import React, {Component} from 'react';
 import Parent from '../Common/ParentPage';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
-import Form from 'react-bootstrap/Form'
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
 import 'bootstrap/dist/css/bootstrap.css';
 import BootStrapAPI from '../Apis/BootStrapAPI';
 import NodeAPI from '../Apis/NodeAPI';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
 
 const styles = {
     container: {
@@ -25,8 +27,18 @@ const styles = {
     heading: {
         textAlign: 'center'
     },
+    tableHead: {
+        textAlign: 'center',
+        fontWeight: 'bold'
+    },
+    tableData: {
+        textAlign: 'center'
+    },
     resultArea: {
-
+        marginTop: '5%'
+    },
+    button1: {
+        border: '1px%'
     }
 };
 
@@ -35,53 +47,16 @@ class NodeDistributionPage extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            fileName: '',
-            fileList: null,
             nodes: [],
-            error: null,
-            resultSet: null
+            connectedNodes: [],
+            error: null
         };
-
-        this.handleSearch = this.handleSearch.bind(this);
-        this.handleUserInput = this.handleUserInput.bind(this);
+        this.retrieveAllNodes = this.retrieveAllNodes.bind(this);
+        this.retrieveConnectedNodes = this.retrieveConnectedNodes.bind(this);
     }
 
     handleErrorResponses(error) {
         this.setState({error: error})
-    }
-
-
-    handleSearch(event) {
-        event.preventDefault();
-        const nodes = this.state.nodes;
-        var nodeCount = nodes.length;
-        // Pick random node from list
-        if (nodeCount > 0) {
-            var randomNodeIndex = Math.floor(Math.random() * ((nodeCount - 1) - 0 + 1)) + 0;
-            var node = nodes[randomNodeIndex];
-            // Sending the search request to the node
-            new NodeAPI().searchFile(node, this.state.fileName).then((response) => {
-                this.setState({resultSet: response.data.node})
-            }).catch((error) => {
-                this.handleErrorResponses(error);
-            });
-        } else {
-            var error = {response: {data: {error: "No nodes available in the network."}}};
-            this.handleErrorResponses(error);
-        }
-
-        // this.state.nodes.map((node) => {
-        //     window.alert(node.host)
-        // });
-
-        // TODO: List the returned file list in a table
-    }
-
-    handleUserInput(event) {
-        const target = event.target;
-        const name = target.name;
-        const value = target.value;
-        this.setState({[name]: value});
     }
 
     componentDidMount() {
@@ -98,12 +73,21 @@ class NodeDistributionPage extends Component {
         });
     }
 
-    isSubmissionInValid() {
-        const {fileName} = this.state;
-        if (fileName === '') {
-            return true;
-        }
-        return false;
+    retrieveConnectedNodes(node) {
+        new NodeAPI().retrieveConnectedNodes(node).then((response) => {
+            console.log(response.data.nodes);
+            if (response.data.nodes != null) {
+                var nodeListString = "#  ";
+                response.data.nodes.map(( listValue, index ) => {
+                    nodeListString = nodeListString + listValue.host + ":" + listValue.port + "  #  ";
+                })
+                this.state.connectedNodes.push(nodeListString);
+                console.log(this.state.connectedNodes);
+            }
+            return response.data.nodes;
+        }).catch((error) => {
+            this.handleErrorResponses(error);
+        });
     }
 
     renderNodeDistributionContent() {
@@ -112,13 +96,44 @@ class NodeDistributionPage extends Component {
                 <Box style={styles.headingArea}>
                     <h2 style={styles.heading}><b>NODE DISTRIBUTION</b></h2>
                 </Box>
-                
+                <Button variant="outlined" onClick={() => {
+                    this.retrieveAllNodes();
+                    this.state.nodes.map((nodeInstance, index) => {
+                        this.retrieveConnectedNodes(this.state.nodes[index]);
+                    })
+                }}>Refresh Connected Nodes</Button>
                 <Box style={styles.resultArea}>
-
+                    <Table aria-label="simple table">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell style={styles.tableHead}>#</TableCell>
+                                <TableCell style={styles.tableHead}>Host</TableCell>
+                                <TableCell style={styles.tableHead}>Port</TableCell>
+                                <TableCell style={styles.tableHead}>Connected Nodes</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {this.state.nodes.map(( listValue, index ) => {
+                                return (
+                                    <TableRow key={index}>
+                                        <TableCell style={styles.tableData}>{index}</TableCell>
+                                        <TableCell style={styles.tableData}>{listValue.host}</TableCell>
+                                        <TableCell style={styles.tableData}>{listValue.port}</TableCell>
+                                        <TableCell style={styles.tableData}>{this.getNodeString(index)}</TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
                 </Box>
-            </Box>);
+            </Box>
+        );
     }
 
+    getNodeString(index) {
+        console.log(this.state.connectedNodes);
+        return (this.state.connectedNodes[index])
+    }
     render() {
         return (<Parent data={this.renderNodeDistributionContent()} error={this.state.error}/>);
     }

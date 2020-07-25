@@ -10,7 +10,7 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Button from '@material-ui/core/Button';
-
+import {Link} from 'react-router-dom';
 import Header from './Header';
 
 const styles = {
@@ -35,6 +35,14 @@ const styles = {
         marginTop: '25px',
         color: '#ffffff'
     },
+    nodeLink: {
+        paddingRight: 30,
+        paddingLeft: 30,
+        textAlign: "center",
+        marginTop: '3px',
+        color: 'white',
+        fontWeight: 'bold'
+    }
 };
 
 class ParentPage extends Component {
@@ -79,11 +87,19 @@ class ParentPage extends Component {
         }
     }
 
+    renderMenue() {
+        return (
+            <Button variant="contained" color="primary">
+                <Link to="/node-distribution" className="btn" style={styles.nodeLink}>View Node Distribution</Link>
+            </Button>
+        );
+    }
+
     render() {
         return (
             <MuiThemeProvider muiTheme={this.props.theme}>
                 <Box>
-                    <Header/>
+                    <Header rightElement={this.renderMenue()}/>
                     <Box flexGrow={1} id={"content-box"}>
                         <Paper style={styles.contentPaper} id={"data-box"} square={true}>
                             {this.props.data}

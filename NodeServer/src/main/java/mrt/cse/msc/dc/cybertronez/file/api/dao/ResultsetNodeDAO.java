@@ -5,6 +5,7 @@ import mrt.cse.msc.dc.cybertronez.dao.NodeDAO;
 public class ResultsetNodeDAO extends NodeDAO {
 
     private String fileName;
+    private String hops;
 
     public String getFileName() {
 
@@ -14,5 +15,15 @@ public class ResultsetNodeDAO extends NodeDAO {
     public void setFileName(String fileName) {
 
         this.fileName = fileName;
+    }
+
+    public String getHops() {
+
+        return hops;
+    }
+
+    public void setHops(String hops) {
+
+        this.hops = hops;
     }
 }
