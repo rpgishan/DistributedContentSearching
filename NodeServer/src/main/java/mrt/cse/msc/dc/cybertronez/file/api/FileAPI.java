@@ -11,17 +11,14 @@ import org.apache.logging.log4j.Logger;
 import org.wso2.carbon.utils.StringUtils;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.SocketException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.StringTokenizer;
 import javax.ws.rs.GET;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.MediaType;
@@ -54,6 +51,17 @@ public class FileAPI {
                 .header("Content-Disposition", contentDispositionHeader)
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Access-Control-Allow-Methods", "GET")
+                .build();
+    }
+
+    @OPTIONS
+    @Path("/retrieveFile/{file_name}")
+    public Response retrieveFileOptions() {
+        return Response.ok()
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Credentials", "true")
+                .header("Access-Control-Allow-Methods", "GET")
+                .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With")
                 .build();
     }
 
@@ -118,6 +126,17 @@ public class FileAPI {
 
     }
 
+    @OPTIONS
+    @Path("/searchFile/{file_name}")
+    public Response searchFileOptions() {
+        return Response.ok()
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Credentials", "true")
+                .header("Access-Control-Allow-Methods", "GET")
+                .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With")
+                .build();
+    }
+
     @GET
     @Path("/retrieveAllFiles")
     public Response retrieveAllFiles() {
@@ -142,5 +161,16 @@ public class FileAPI {
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Access-Control-Allow-Methods", "GET")
                 .type(MediaType.APPLICATION_JSON).build();
+    }
+
+    @OPTIONS
+    @Path("/retrieveAllFiles")
+    public Response retrieveAllFilesOptions() {
+        return Response.ok()
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Credentials", "true")
+                .header("Access-Control-Allow-Methods", "GET")
+                .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With")
+                .build();
     }
 }
