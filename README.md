@@ -33,7 +33,7 @@ java -jar NodeServer-1.0-SNAPSHOT.jar 8083 localhost 55555
 ```
 ...
 
-### Step 4
+### Step 4 - User Interface
 Start up the user interface by running the following commands in the `user-interface`
 directory.
 ```sh
@@ -42,10 +42,36 @@ npm install
 ```sh
 npm start
 ```
-
-### Step 5
 The user interface could be accessed using http://localhost:3000/.
 
 Here you can type a search word for the file search and download the file using the file link if the file is available.
 
 You can also monitor the status of the distributed network using http://localhost:3000/node-distribution. 
+
+### Step 5 - Direct UDP
+
+Alternative to the user interface, you can also perform the file search operation using a UDP request by following the steps given below.
+
+Establish a netcat connection using the following command.
+```bash
+nc -u <ip_address> <port>
+```
+**Example:**
+```bash
+nc -u 127.0.0.1 8082
+```
+Send the file search request using the following command.
+```bash
+<length> SER <ip_address> <port> 0 <search_word>
+```
+**Example:**
+```bash
+0034 SER localhost 8081 0 TINTIN
+```
+
+## Developer Testing
+1. Start the Bootstrap Server by running the `BootstrapServer` module.
+2. Start the Client Nodes by running the `mrt.cse.msc.dc.cybertronez.test.StartServers` class in the `NodeServer` module.
+3. Wait for the console output `Done...`.
+4. To test a server node, run the `mrt.cse.msc.dc.cybertronez.test.TestClient` class in the `NodeServer` module.
+5. To test the file search, run the `mrt.cse.msc.dc.cybertronez.test.TestSearch` class in the `NodeServer` module.
