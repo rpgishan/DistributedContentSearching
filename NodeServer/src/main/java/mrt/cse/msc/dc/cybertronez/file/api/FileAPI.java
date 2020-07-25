@@ -10,7 +10,6 @@ import mrt.cse.msc.dc.cybertronez.file.api.dao.FileListDAO;
 import mrt.cse.msc.dc.cybertronez.file.api.dao.ResultsetNodeDAO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.wso2.carbon.utils.StringUtils;
 
 import java.io.File;
 import java.net.DatagramSocket;
@@ -59,6 +58,7 @@ public class FileAPI {
     @OPTIONS
     @Path("/retrieveFile/{file_name}")
     public Response retrieveFileOptions() {
+
         return Response.ok()
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Access-Control-Allow-Credentials", "true")
@@ -96,9 +96,23 @@ public class FileAPI {
             if (command.equals(Messages.SEROK.getValue())) {
                 if (code.equals(Messages.CODE0.getValue())) {
                     String[] host = received.split(" ");
+                    String hops = host[3];
                     foundIp = host[host.length - 1].split(":")[0];
                     foundPort = host[host.length - 1].split(":")[1];
                     foundFile = host[host.length - 2];
+
+                    // create response object
+                    ResultsetNodeDAO node = new ResultsetNodeDAO();
+                    node.setHost(foundIp);
+                    node.setPort(Integer.parseInt(foundPort.replace("\n", "").replace("\r", "")));
+                    node.setFileName(foundFile);
+                    node.setHops(hops);
+
+                    return Response.status(200).entity(node)
+                            .header("Access-Control-Allow-Origin", "*")
+                            .header("Access-Control-Allow-Methods", "GET")
+                            .type(MediaType.APPLICATION_JSON).build();
+
                 } else if (code.equals(Messages.CODE9998.getValue())) {
 
                     error.setError("File Could not be found.");
@@ -113,19 +127,6 @@ public class FileAPI {
             LOG.error("SocketException ", e);
         }
 
-        // create response object
-        ResultsetNodeDAO node = new ResultsetNodeDAO();
-        if (!StringUtils.isNullOrEmpty(foundIp) && !StringUtils.isNullOrEmpty(foundPort)) {
-            node.setHost(foundIp);
-            node.setPort(Integer.parseInt(foundPort.replace("\n", "").replace("\r", "")));
-            node.setFileName(foundFile);
-
-            return Response.status(200).entity(node)
-                    .header("Access-Control-Allow-Origin", "*")
-                    .header("Access-Control-Allow-Methods", "GET")
-                    .type(MediaType.APPLICATION_JSON).build();
-        }
-
         error.setError("Internal server error.");
         return Response.status(500)
                 .header("Access-Control-Allow-Origin", "*")
@@ -136,6 +137,7 @@ public class FileAPI {
     @OPTIONS
     @Path("/searchFile/{file_name}")
     public Response searchFileOptions() {
+
         return Response.ok()
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Access-Control-Allow-Credentials", "true")
@@ -173,6 +175,7 @@ public class FileAPI {
     @OPTIONS
     @Path("/retrieveAllFiles")
     public Response retrieveAllFilesOptions() {
+
         return Response.ok()
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Access-Control-Allow-Credentials", "true")

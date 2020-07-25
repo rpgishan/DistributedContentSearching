@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 public class Server {
 
-    private static Logger logger = null;
+    private Logger logger;
     private Node bsServer;
     private Node currentNode;
     private List<Node> connectedNodes = new ArrayList<>();
@@ -40,6 +40,7 @@ public class Server {
         try {
             clientIp = InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {
+            LogManager.getLogger(Server.class).error("UnknownHostException", e);
             clientIp = "localhost";
         }
         bsServer = new Node(bsIp, bsPort);
