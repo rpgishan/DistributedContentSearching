@@ -56,7 +56,7 @@ class ParentPage extends Component {
                 errorMessage = error.response.data.error;
             }
         } else if (error.request) {
-            errorMessage = "Could not establish connection to bootstrap server."
+            errorMessage = "Could not establish connection to server."
         }
 
         this.setState({
