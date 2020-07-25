@@ -14,6 +14,7 @@ import TableCell from '@material-ui/core/TableCell';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import {Link} from 'react-router-dom';
+import {Link } from "react-router-dom";
 
 const styles = {
     container: {
@@ -126,6 +127,7 @@ class FileSearchPage extends Component {
                 <Box style={styles.headingArea}>
                     <h2 style={styles.heading}><b>DISTRIBUTED FILE SEARCH</b></h2>
                 </Box>
+                <Link to="/NodeDistributionPage"><Button variant="outlined">View Node Distribution</Button></Link><br/><br/><br/>
                 <Form onSubmit={this.handleSearch}>
                     <Row>
                         <Col xs={11}>
