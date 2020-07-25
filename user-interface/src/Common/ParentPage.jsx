@@ -50,9 +50,15 @@ class ParentPage extends Component {
 
     handleError(error) {
         var errorMessage = 'Something went wrong. Please try again later.';
-        if (error.response.data.error) {
-            errorMessage = error.response.data.error;
+
+        if (error.response){
+            if (error.response.data.error) {
+                errorMessage = error.response.data.error;
+            }
+        } else if (error.request) {
+            errorMessage = "Could not establish connection to bootstrap server."
         }
+
         this.setState({
             responseErrorDialogOpen: true,
             serverErrorMsg: errorMessage

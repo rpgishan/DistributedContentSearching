@@ -7,6 +7,7 @@ import mrt.cse.msc.dc.cybertronez.dao.NodeDAO;
 import mrt.cse.msc.dc.cybertronez.file.FileGenerator;
 import mrt.cse.msc.dc.cybertronez.file.api.dao.ErrorResponse;
 import mrt.cse.msc.dc.cybertronez.file.api.dao.FileListDAO;
+import mrt.cse.msc.dc.cybertronez.file.api.dao.ResultsetNodeDAO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.wso2.carbon.utils.StringUtils;
@@ -98,13 +99,12 @@ public class FileAPI {
                 }
                 LOG.info("Response received for file search api call {}", received);
             }
-
         } catch (SocketException e) {
             LOG.error("SocketException ", e);
         }
 
         // create response object
-        NodeDAO node = new NodeDAO();
+        ResultsetNodeDAO node = new ResultsetNodeDAO();
         if (!StringUtils.isNullOrEmpty(foundIp) && !StringUtils.isNullOrEmpty(foundPort)) {
             node.setHost(foundIp);
             node.setPort(Integer.parseInt(foundPort.replace("\n", "").replace("\r", "")));

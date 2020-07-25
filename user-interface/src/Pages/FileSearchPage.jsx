@@ -10,7 +10,7 @@ import BootStrapAPI from '../Apis/BootStrapAPI';
 import NodeAPI from '../Apis/NodeAPI';
 
 const styles = {
-    searchArea: {
+    container: {
         width: '60%',
         marginLeft: '20%',
         marginRight: '20%',
@@ -24,6 +24,9 @@ const styles = {
     },
     heading: {
         textAlign: 'center'
+    },
+    resultArea: {
+
     }
 };
 
@@ -105,7 +108,7 @@ class FileSearchPage extends Component {
 
     renderFileSearchContent() {
         return (
-            <Box style={styles.searchArea}>
+            <Box style={styles.container}>
                 <Box style={styles.headingArea}>
                     <h2 style={styles.heading}><b>DISTRIBUTED FILE SEARCH</b></h2>
                 </Box>
@@ -121,6 +124,9 @@ class FileSearchPage extends Component {
                         </Col>
                     </Row>
                 </Form>
+                <Box style={styles.resultArea}>
+
+                </Box>
             </Box>);
     }
 
