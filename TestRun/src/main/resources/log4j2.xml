@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration status="info">
+    <Properties>
+        <Property name="layout">%d [%t] %-5level %logger - %m%n</Property>
+    </Properties>
+
+    <Appenders>
+
+        <Console name="Console">
+            <PatternLayout pattern="${layout}"/>
+        </Console>
+
+        <!--<File name="LogFile" fileName="logs/serverFile.log" append="true">
+            <PatternLayout pattern="${layout}"/>
+        </File>-->
+
+        <RollingRandomAccessFile name="LogToTestRunRollingRandomAccessFile" fileName="logs/TestRun.log"
+                                 filePattern="logs/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
+            <PatternLayout pattern="${layout}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingRandomAccessFile>
+
+        <File name="SearchLogFile" fileName="logs/Search.log" append="true">
+            <PatternLayout pattern="${layout}"/>
+        </File>
+
+        <File name="StartServersLogFile" fileName="logs/StartServers.log" append="true">
+            <PatternLayout pattern="${layout}"/>
+        </File>
+
+        <File name="TestClientLogFile" fileName="logs/TestClient.log" append="true">
+            <PatternLayout pattern="${layout}"/>
+        </File>
+
+    </Appenders>
+
+    <Loggers>
+
+        <Logger name="mrt.cse.msc.dc.cybertronez.test" level="debug" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="mrt.cse.msc.dc.cybertronez.test" level="info" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="LogToTestRunRollingRandomAccessFile"/>
+        </Logger>
+
+        <Logger name="mrt.cse.msc.dc.cybertronez.test.TestSearch" level="info" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="SearchLogFile"/>
+        </Logger>
+
+        <Logger name="mrt.cse.msc.dc.cybertronez.test.StartServers" level="info" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="StartServersLogFile"/>
+        </Logger>
+
+        <Logger name="mrt.cse.msc.dc.cybertronez.test.TestClient" level="info" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="TestClientLogFile"/>
+        </Logger>
+
+        <Root level="error">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="LogToTestRunRollingRandomAccessFile"/>
+        </Root>
+
+    </Loggers>
+</Configuration>

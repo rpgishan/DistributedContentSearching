@@ -10,21 +10,35 @@
             <PatternLayout pattern="${layout}"/>
         </Console>
 
-        <File name="LogFile" fileName="logs/bootstrap.log" append="true">
+        <!--<File name="LogFile" fileName="logs/BootstrapFile.log" append="true">
             <PatternLayout pattern="${layout}"/>
-        </File>
+        </File>-->
+
+        <RollingRandomAccessFile name="LogToBSRollingRandomAccessFile" fileName="logs/Bootstrap.log"
+                                 filePattern="logs/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
+            <PatternLayout pattern="${layout}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingRandomAccessFile>
     </Appenders>
 
     <Loggers>
 
-        <Logger name="mrt.cse.msc.dc.cybertronez" level="info" additivity="false">
+        <Logger name="mrt.cse.msc.dc.cybertronez.bootstrapserver" level="debug" additivity="false">
             <AppenderRef ref="Console"/>
-            <AppenderRef ref="LogFile"/>
         </Logger>
 
-        <Root level="info">
+        <Logger name="mrt.cse.msc.dc.cybertronez.bootstrapserver" level="info" additivity="false">
             <AppenderRef ref="Console"/>
-            <AppenderRef ref="LogFile"/>
+            <AppenderRef ref="LogToBSRollingRandomAccessFile"/>
+        </Logger>
+
+        <Root level="error">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="LogToBSRollingRandomAccessFile"/>
         </Root>
 
     </Loggers>

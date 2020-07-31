@@ -33,6 +33,9 @@ public class Server {
     private Map<String, Set<Node>> routingTable = new HashMap<>();
     private Set<String> fileNames = new HashSet<>();
     private Util util;
+    private List<String> queryDetailsOK = new ArrayList<>();
+    private List<String> queryDetailsFW = new ArrayList<>();
+    private List<String> queryDetailsNF = new ArrayList<>();
 
     public Server(final String clientPort, final String bsIp, final String bsPort) {
 
@@ -133,11 +136,15 @@ public class Server {
             } else if (command.equals(Messages.LEAVE.getValue())) {
                 response = processLeaveRequest(st);
             } else if (command.equals(Messages.SEND_LEAVE.getValue())) {
-                response = initiateLeaveRequest();
+                response = initiateUnregRequest();
+                response += " ";
+                response += initiateLeaveRequest();
             } else if (command.equals(Messages.SER.getValue())) {
                 response = processSearchRequest(st);
             } else if (command.equals(Messages.DETAILS.getValue())) {
                 response = processDetailsRequest();
+            }  else if (command.equals(Messages.SEARCHED_QUERIES.getValue())) {
+                response = getSearchedQueries();
             } else if (command.equals(Messages.PING.getValue())) {
                 response = util.generateMessage(Messages.PING_OK.getValue());
             }
@@ -189,6 +196,22 @@ public class Server {
         return util.generateMessage(Messages.DETAILS.getValue(), sb.toString());
     }
 
+    private String getSearchedQueries() {
+
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Node - ").append(currentNode.toString());
+
+        sb.append("\n*****SEARCHED_QUERIES*****").append("\n");
+        sb.append("\n*****queryDetailsOK***** ").append(queryDetailsOK.size()).append(" \n");
+        queryDetailsOK.forEach(s -> sb.append(s).append("\n"));
+        sb.append("\n\n*****queryDetailsFW***** ").append(queryDetailsFW.size()).append(" \n");
+        queryDetailsFW.forEach(s -> sb.append(s).append("\n"));
+        sb.append("\n\n*****queryDetailsNF***** ").append(queryDetailsNF.size()).append(" \n");
+        queryDetailsNF.forEach(s -> sb.append(s).append("\n"));
+
+        return util.generateMessage(Messages.SEARCHED_QUERIES.getValue(), sb.toString());
+    }
+
     private String processLeaveRequest(final StringTokenizer st) {
 
         if (st.countTokens() >= 2) {
@@ -197,6 +220,17 @@ public class Server {
             final Node node = new Node(ip, port);
             final Optional<Node> first = connectedNodes.stream().filter(node::equals).findFirst();
             final boolean response = first.isPresent() && connectedNodes.remove(first.get());
+
+            Set<String> fileNames = new HashSet<>();
+            routingTable.forEach((s, nodes) -> {
+                if (nodes.contains(node)) {
+                    nodes.remove(node);
+                    if (nodes.isEmpty()) {
+                        fileNames.add(s);
+                    }
+                }
+            });
+            fileNames.forEach(routingTable::remove);
 
             logger.info("response: {}", () -> response);
 
@@ -218,6 +252,21 @@ public class Server {
                 logger.info("response: {}", () -> response);
                 responseBuilder.append(response).append(", ");
             });
+        } catch (SocketException e) {
+            logger.error("SocketException", e);
+        }
+        return responseBuilder.toString();
+    }
+
+    private String initiateUnregRequest() {
+
+        StringBuilder responseBuilder = new StringBuilder();
+        try (DatagramSocket socket = new DatagramSocket()) {
+            byte[] msg = util.generateMessage(Messages.UNREG.getValue(), currentNode.getIp(),
+                    Integer.toString(currentNode.getPort()), currentNode.getUsername()).getBytes();
+            String response = util.sendMessage(msg, bsServer.getIp(), socket, bsServer.getPort(), Util.DEFAULT_TIMEOUT);
+            logger.info("response: {}", () -> response);
+            responseBuilder.append(response).append(", ");
         } catch (SocketException e) {
             logger.error("SocketException", e);
         }
@@ -304,8 +353,10 @@ public class Server {
                 .collect(Collectors.toList());// TODO change
         final String fileNameStrings = convertFileNameListToString(foundFileNames);
 
-        return util.generateMessage(Messages.SEROK.getValue(), Messages.CODE0.getValue(), Integer.toString(hops),
+        String generateMessageSearchOk = util.generateMessage(Messages.SEROK.getValue(), Messages.CODE0.getValue(), Integer.toString(hops),
                 convertPropagatedNodesToString(propagatedNodes), fileNameStrings, currentNode.toString());
+        queryDetailsOK.add("generateMessageSearchOk - " + generateMessageSearchOk);
+        return generateMessageSearchOk;
     }
 
     private String convertFileNameListToString(final List<String> foundFileNames) {
@@ -336,9 +387,11 @@ public class Server {
 
                 final String propagatedNodesString = convertPropagatedNodesToString(propagatedNodes);
 
-                final byte[] buffer = util.generateMessage(Messages.SER.getValue(), query.getInitiatedNode().getIp(),
+                String generateMessagePropagate = util.generateMessage(Messages.SER.getValue(), query.getInitiatedNode().getIp(),
                         Integer.toString(query.getInitiatedNode().getPort()), Integer.toString(hops),
-                        propagatedNodesString, query.getQuery()).getBytes();
+                        propagatedNodesString, query.getQuery());
+                queryDetailsFW.add("generateMessagePropagate - " + generateMessagePropagate);
+                final byte[] buffer = generateMessagePropagate.getBytes();
                // String response = util.sendMessage(buffer, node.getIp(), socket, node.getPort(), Util.DEFAULT_TIMEOUT);
                 String response = util.sendMessage(buffer, entry.getValue().getIp(), socket, entry.getValue().getPort(), Util.DEFAULT_TIMEOUT);
 
@@ -380,8 +433,10 @@ public class Server {
 
         final String propagatedNodesString = convertPropagatedNodesToString(propagatedNodes);
 
-        return util.generateMessage(Messages.SEROK.getValue(), Messages.CODE9998.getValue(), Messages.NOT_FOUND.getValue(),
+        String generateMessageNotFound = util.generateMessage(Messages.SEROK.getValue(), Messages.CODE9998.getValue(), Messages.NOT_FOUND.getValue(),
                 Integer.toString(hops), propagatedNodesString);
+        queryDetailsNF.add("generateMessageNotFound - " + generateMessageNotFound);
+        return generateMessageNotFound;
     }
 
 
