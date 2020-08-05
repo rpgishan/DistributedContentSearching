@@ -23,6 +23,16 @@
             </Policies>
             <DefaultRolloverStrategy max="30"/>
         </RollingRandomAccessFile>
+
+        <RollingRandomAccessFile name="LogFileHealthCheck" fileName="logs/HealthCheck.log"
+                                 filePattern="logs/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
+            <PatternLayout pattern="${layout}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingRandomAccessFile>
     </Appenders>
 
     <Loggers>
@@ -34,6 +44,11 @@
         <Logger name="mrt.cse.msc.dc.cybertronez" level="info" additivity="false">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="LogToServerRollingRandomAccessFile"/>
+        </Logger>
+
+        <Logger name="mrt.cse.msc.dc.cybertronez.HealthCheck" level="info" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="LogFileHealthCheck"/>
         </Logger>
 
         <Root level="error">
